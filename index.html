@@ -14,6 +14,7 @@
     button { padding: 10px 20px; background-color: #007BFF; color: white; border: none; cursor: pointer; }
     button:hover { background-color: #0056b3; }
     .section { margin-top: 20px; }
+    p { line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -30,6 +31,11 @@
       <p>Federal Funds Rate: <span id="fedFundsRate">2.00</span>% (Change: <span id="fedFundsChange">0.00</span>%)</p>
       <p>Federal Funds Rate History (Last 12 Months): <span id="fedFundsHistory">2.00</span></p>
       <p><strong>Regulatory Requirement:</strong> Lending is limited to 90% of deposits plus capital to maintain reserves.</p>
+      <p><strong>How Loan Originations Are Calculated:</strong> New loans are automatically determined each month based on demand, sales staff capacity, and the lending limit. Demand depends on your interest rates (e.g., lowering rates 1% below market increases demand by 20%). Each sales staff originates $5M in loans monthly, scaled by technology (Basic: 1x, Standard: 1.1x, Advanced: 1.2x), split equally across loan types. Originations are the minimum of demand or capacity per type, scaled down if total loans would exceed 90% of deposits plus capital.</p>
+      <h3>Current Loan Demand ($M)</h3>
+      <p>Residential Mortgages: <span id="demandResidentialMortgages">10.00</span></p>
+      <p>Commercial Real Estate: <span id="demandCommercialRealEstate">7.00</span></p>
+      <p>Small Business Loans: <span id="demandSmallBusinessLoans">5.00</span></p>
       <h3>Loan Activity ($M)</h3>
       <p>New Loans: <span id="newLoans">0.00</span></p>
       <p>Loan Runoff: <span id="loanRunoff">0.00</span></p>
@@ -68,12 +74,15 @@
     </div>
   </div>
   <script>
-    // Define loan types with initial demand as requested
+    // Define loan types with initial demand
     const loanTypes = [
       { name: 'Residential Mortgages', marketRate: 4.5, defaultRate: 0.5, riskWeight: 50, term: 360, initialDemand: 10000000 },
       { name: 'Commercial Real Estate', marketRate: 5.5, defaultRate: 1.0, riskWeight: 100, term: 120, initialDemand: 7000000 },
       { name: 'Small Business Loans', marketRate: 7.0, defaultRate: 2.0, riskWeight: 100, term: 60, initialDemand: 5000000 },
     ];
+
+    // Define technology multipliers
+    const techMultipliers = { basic: 1.0, standard: 1.1, advanced: 1.2 };
 
     // Define scenarios
     const scenarios = [
@@ -94,24 +103,18 @@
       month: 0,
       capital: 20000000,
       deposits: 100000000,
-      loanPortfolio: [], // Initialized with existing loans below
+      loanPortfolio: [],
       staffing: { sales: 5 },
       technology: 'basic',
       marketDepositRate: 2.0,
       marketLoanRates: loanTypes.map(lt => lt.marketRate),
       fedFundsRate: 2.0,
       fedFundsRateHistory: [2.0],
-      loanRunoffRate: 0.005, // Base runoff rate (0.5% per month)
+      loanRunoffRate: 0.005,
       newLoans: 0,
       loanRunoff: 0,
       netLoanChange: 0,
-    };
-
-    // Technology multipliers for staff effectiveness
-    const techMultipliers = {
-      basic: 1.0,
-      standard: 1.1,
-      advanced: 1.2,
+      currentDemand: [10000000, 7000000, 5000000],
     };
 
     // Start with $80M in outstanding loans
@@ -132,9 +135,36 @@
       return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
     }
 
+    // Update demand display dynamically
+    function updateDemandDisplay() {
+      const loanRates = loanTypes.map(lt => parseFloat(document.getElementById(`rate${lt.name.replace(/\s/g, '')}`).value));
+      const demands = loanTypes.map((lt, i) => {
+        const baseDemand = lt.initialDemand;
+        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2;
+        return Math.max(0, baseDemand * rateEffect);
+      });
+      document.getElementById('demandResidentialMortgages').textContent = (demands[0] / 1000000).toFixed(2);
+      document.getElementById('demandCommercialRealEstate').textContent = (demands[1] / 1000000).toFixed(2);
+      document.getElementById('demandSmallBusinessLoans').textContent = (demands[2] / 1000000).toFixed(2);
+    }
+
+    // Update margins dynamically
+    const depositRateInput = document.getElementById('depositRate');
+    const loanRateInputs = loanTypes.map(lt => document.getElementById(`rate${lt.name.replace(/\s/g, '')}`));
+
+    function updateMargins() {
+      const depositRate = parseFloat(depositRateInput.value);
+      loanRateInputs.forEach((input, i) => {
+        const loanRate = parseFloat(input.value);
+        const margin = loanRate - depositRate;
+        let comment = margin > 3 ? 'Very Good' : margin > 2 ? 'Good' : 'Low Margin';
+        document.getElementById(`margin${loanTypes[i].name.replace(/\s/g, '')}`).textContent = `(Margin: ${margin.toFixed(2)}% - ${comment})`;
+      });
+    }
+
     // Update display
     function updateDisplay() {
-      const totalLoans = bank.loanPortfolio.reduce((sum, cohort) => sum + cohort.currentBalance, 0);
+      const totalLoansValue = totalLoans();
       const rwa = loanTypes.reduce((sum, lt) => {
         const typeBalance = bank.loanPortfolio.filter(c => c.type === lt.name).reduce((s, c) => s + c.currentBalance, 0);
         return sum + typeBalance * (lt.riskWeight / 100);
@@ -148,7 +178,7 @@
       document.getElementById('scenario').textContent = bank.currentScenario ? bank.currentScenario.name : 'Starting Out';
       document.getElementById('capital').textContent = formatCurrency(bank.capital);
       document.getElementById('deposits').textContent = formatCurrency(bank.deposits);
-      document.getElementById('totalLoans').textContent = formatCurrency(totalLoans);
+      document.getElementById('totalLoans').textContent = formatCurrency(totalLoansValue);
       document.getElementById('car').textContent = car.toFixed(2);
       document.getElementById('efficiency').textContent = efficiency.toFixed(2);
       document.getElementById('fedFundsRate').textContent = bank.fedFundsRate.toFixed(2);
@@ -158,6 +188,11 @@
       document.getElementById('newLoans').textContent = (bank.newLoans / 1000000).toFixed(2);
       document.getElementById('loanRunoff').textContent = (bank.loanRunoff / 1000000).toFixed(2);
       document.getElementById('netLoanChange').textContent = (bank.netLoanChange / 1000000).toFixed(2);
+    }
+
+    // Total loans helper
+    function totalLoans() {
+      return bank.loanPortfolio.reduce((sum, cohort) => sum + cohort.currentBalance, 0);
     }
 
     // Advance month
@@ -186,46 +221,57 @@
       bank.staffing.sales = salesStaff;
       bank.technology = techPackage;
 
-      // Calculate deposit growth (affected by deposit rate)
+      // Calculate deposit growth
       const multiplier = techMultipliers[bank.technology];
       const annualDepositGrowth = scenario.depositGrowthBase + (depositRate - bank.marketDepositRate) * 10 + (bank.staffing.sales * 0.5 * multiplier);
       bank.deposits *= (1 + annualDepositGrowth / 100 / 12);
 
-      // Calculate loan runoff rate (affected by staff, tech, and fed funds rate)
-      const baseRunoffRate = 0.005; // 0.5% per month
+      // Calculate loan runoff rate
+      const baseRunoffRate = 0.005;
       const fedFundsChange = bank.month > 0 ? bank.fedFundsRate - bank.fedFundsRateHistory[bank.fedFundsRateHistory.length - 2] : 0;
       const runoffRate = baseRunoffRate * (1 - (bank.staffing.sales * 0.01 * multiplier)) - fedFundsChange * 0.002;
       bank.loanRunoff = bank.loanPortfolio.reduce((sum, cohort) => sum + cohort.currentBalance * runoffRate, 0);
 
-      // Calculate new loan demand (affected by loan rates)
+      // Calculate actual loan demand with scenario effects
       const demandChanges = scenario.loanDemandChange;
       const loanDemands = loanTypes.map((lt, i) => {
         const baseDemand = lt.initialDemand;
         const change = demandChanges[lt.name] !== undefined ? demandChanges[lt.name] : (demandChanges.all || 0);
-        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2; // Lower rates increase demand
-        return baseDemand * (1 + change / 100) * rateEffect;
+        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2;
+        return Math.max(0, baseDemand * (1 + change / 100) * rateEffect);
       });
+      bank.currentDemand = loanDemands;
 
-      // Originate new loans based on demand and staff capacity
-      const loanCapacityPerStaff = 5000000 * multiplier;
-      const totalCapacity = bank.staffing.sales * loanCapacityPerStaff;
+      // Calculate loan originations automatically
+      const totalCapacity = bank.staffing.sales * 5000000 * techMultipliers[bank.technology];
+      const capacityPerType = totalCapacity / loanTypes.length;
+      const currentLoans = totalLoans();
       const lendingLimit = bank.deposits * 0.9 + bank.capital;
-      bank.newLoans = loanTypes.reduce((sum, lt, i) => {
-        const amount = Math.min(loanDemands[i], totalCapacity / loanTypes.length, lendingLimit - totalLoans());
-        if (amount > 0) {
+      const availableLending = lendingLimit - currentLoans;
+
+      let totalPotential = 0;
+      const potentialOriginations = loanDemands.map(demand => Math.min(demand, capacityPerType));
+      totalPotential = potentialOriginations.reduce((sum, po) => sum + po, 0);
+
+      const scaleFactor = totalPotential > 0 ? Math.min(1, availableLending / totalPotential) : 0;
+      bank.newLoans = 0;
+
+      loanTypes.forEach((lt, i) => {
+        const origination = potentialOriginations[i] * scaleFactor;
+        if (origination > 0) {
           bank.loanPortfolio.push({
             type: lt.name,
             originationMonth: bank.month,
-            initialBalance: amount,
-            currentBalance: amount,
+            initialBalance: origination,
+            currentBalance: origination,
             rate: loanRates[i],
             term: lt.term,
             remainingTerm: lt.term,
-            payment: calculatePayment(amount, loanRates[i], lt.term),
+            payment: calculatePayment(origination, loanRates[i], lt.term),
           });
+          bank.newLoans += origination;
         }
-        return sum + amount;
-      }, 0);
+      });
 
       // Process loan portfolio
       let interestIncome = 0;
@@ -252,7 +298,7 @@
       bank.loanPortfolio.forEach(cohort => {
         const runoffAmount = cohort.currentBalance * runoffRate;
         cohort.currentBalance -= runoffAmount;
-        bank.capital += runoffAmount; // Runoff pays off loans, increasing capital
+        bank.capital += runoffAmount; // Runoff increases capital
       });
 
       // Update net loan change
@@ -297,6 +343,7 @@
       bank.month += 1;
       updateDisplay();
       updateMargins();
+      updateDemandDisplay();
 
       if (bank.month >= 48) {
         alert(`Simulation Complete!\nFinal Capital: ${formatCurrency(bank.capital)}\nFinal CAR: ${car.toFixed(2)}%\nEfficiency Ratio: ${(nonInterestExpenses / revenue * 100).toFixed(2)}%`);
@@ -304,32 +351,16 @@
       }
     }
 
-    // Total loans helper
-    function totalLoans() {
-      return bank.loanPortfolio.reduce((sum, cohort) => sum + cohort.currentBalance, 0);
-    }
-
-    // Update margins dynamically
-    const depositRateInput = document.getElementById('depositRate');
-    const loanRateInputs = loanTypes.map(lt => document.getElementById(`rate${lt.name.replace(/\s/g, '')}`));
-
-    function updateMargins() {
-      const depositRate = parseFloat(depositRateInput.value);
-      loanRateInputs.forEach((input, i) => {
-        const loanRate = parseFloat(input.value);
-        const margin = loanRate - depositRate;
-        let comment = margin > 3 ? 'Very Good' : margin > 2 ? 'Good' : 'Low Margin';
-        document.getElementById(`margin${loanTypes[i].name.replace(/\s/g, '')}`).textContent = `(Margin: ${margin.toFixed(2)}% - ${comment})`;
-      });
-    }
-
-    depositRateInput.addEventListener('input', updateMargins);
-    loanRateInputs.forEach(input => input.addEventListener('input', updateMargins));
-
-    // Initialize
+    // Initialize game
     document.getElementById('decisions').addEventListener('submit', advanceMonth);
+    depositRateInput.addEventListener('input', updateMargins);
+    loanRateInputs.forEach(input => input.addEventListener('input', () => {
+      updateMargins();
+      updateDemandDisplay();
+    }));
     updateDisplay();
     updateMargins();
+    updateDemandDisplay();
   </script>
 </body>
 </html>
