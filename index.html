@@ -24,16 +24,16 @@
       <h3>Current Scenario: <span id="scenario">Starting Out</span></h3>
       <p>Capital: <span id="capital">$20,000,000</span></p>
       <p>Deposits: <span id="deposits">$100,000,000</span></p>
-      <p>Total Loans: <span id="totalLoans">$0</span></p>
+      <p>Total Loans: <span id="totalLoans">$80,000,000</span></p>
       <p>Capital Adequacy Ratio: <span id="car">N/A</span>%</p>
       <p>Efficiency Ratio: <span id="efficiency">N/A</span>%</p>
       <p>Federal Funds Rate: <span id="fedFundsRate">2.00</span>% (Change: <span id="fedFundsChange">0.00</span>%)</p>
       <p>Federal Funds Rate History (Last 12 Months): <span id="fedFundsHistory">2.00</span></p>
       <p><strong>Regulatory Requirement:</strong> Lending is limited to 90% of deposits plus capital to maintain reserves.</p>
-      <h3>Current Loan Demand ($M)</h3>
-      <p>Residential Mortgages: <span id="demandResidentialMortgages">10.00</span></p>
-      <p>Commercial Real Estate: <span id="demandCommercialRealEstate">10.00</span></p>
-      <p>Small Business Loans: <span id="demandSmallBusinessLoans">10.00</span></p>
+      <h3>Loan Activity ($M)</h3>
+      <p>New Loans: <span id="newLoans">0.00</span></p>
+      <p>Loan Runoff: <span id="loanRunoff">0.00</span></p>
+      <p>Net Loan Change: <span id="netLoanChange">0.00</span></p>
     </div>
     <form id="decisions">
       <div class="section">
@@ -47,13 +47,7 @@
         <label>Small Business Loans: <input type="number" step="0.1" id="rateSmallBusinessLoans" value="7.0" min="0"> <span id="marginSmallBusinessLoans"></span></label>
       </div>
       <div class="section">
-        <h4>Loan Originations ($ million)</h4>
-        <label>Residential Mortgages: <input type="number" step="0.1" id="origResidentialMortgages" value="0" min="0"></label>
-        <label>Commercial Real Estate: <input type="number" step="0.1" id="origCommercialRealEstate" value="0" min="0"></label>
-        <label>Small Business Loans: <input type="number" step="0.1" id="origSmallBusinessLoans" value="0" min="0"></label>
-      </div>
-      <div class="section">
-        <label>Sales Staff (Salary $5,000/month each, +0.5% annual deposit growth, $5M loan capacity): <input type="number" id="salesStaff" value="5" min="1"></label>
+        <label>Sales Staff (Salary $5,000/month each, +0.5% annual deposit growth, loan capacity): <input type="number" id="salesStaff" value="5" min="1"></label>
         <label>Technology Package: 
           <select id="techPackage">
             <option value="basic">Basic ($1,000/month, no bonus)</option>
@@ -74,11 +68,11 @@
     </div>
   </div>
   <script>
-    // Define loan types
+    // Define loan types with initial demand as requested
     const loanTypes = [
-      { name: 'Residential Mortgages', marketRate: 4.5, defaultRate: 0.5, riskWeight: 50, term: 360 },
-      { name: 'Commercial Real Estate', marketRate: 5.5, defaultRate: 1.0, riskWeight: 100, term: 120 },
-      { name: 'Small Business Loans', marketRate: 7.0, defaultRate: 2.0, riskWeight: 100, term: 60 },
+      { name: 'Residential Mortgages', marketRate: 4.5, defaultRate: 0.5, riskWeight: 50, term: 360, initialDemand: 10000000 },
+      { name: 'Commercial Real Estate', marketRate: 5.5, defaultRate: 1.0, riskWeight: 100, term: 120, initialDemand: 7000000 },
+      { name: 'Small Business Loans', marketRate: 7.0, defaultRate: 2.0, riskWeight: 100, term: 60, initialDemand: 5000000 },
     ];
 
     // Define scenarios
@@ -100,22 +94,32 @@
       month: 0,
       capital: 20000000,
       deposits: 100000000,
-      loanPortfolio: [],
+      loanPortfolio: [], // Initialized with existing loans below
       staffing: { sales: 5 },
       technology: 'basic',
       marketDepositRate: 2.0,
       marketLoanRates: loanTypes.map(lt => lt.marketRate),
       fedFundsRate: 2.0,
       fedFundsRateHistory: [2.0],
-      currentDemand: [10000000, 10000000, 10000000], // Initial demand in $
+      loanRunoffRate: 0.005, // Base runoff rate (0.5% per month)
+      newLoans: 0,
+      loanRunoff: 0,
+      netLoanChange: 0,
     };
 
-    // Technology multipliers
+    // Technology multipliers for staff effectiveness
     const techMultipliers = {
       basic: 1.0,
       standard: 1.1,
       advanced: 1.2,
     };
+
+    // Start with $80M in outstanding loans
+    bank.loanPortfolio = [
+      { type: 'Residential Mortgages', originationMonth: -12, initialBalance: 40000000, currentBalance: 38000000, rate: 4.5, term: 360, remainingTerm: 348, payment: calculatePayment(40000000, 4.5, 360) },
+      { type: 'Commercial Real Estate', originationMonth: -6, initialBalance: 20000000, currentBalance: 19000000, rate: 5.5, term: 120, remainingTerm: 114, payment: calculatePayment(20000000, 5.5, 120) },
+      { type: 'Small Business Loans', originationMonth: -3, initialBalance: 20000000, currentBalance: 19500000, rate: 7.0, term: 60, remainingTerm: 57, payment: calculatePayment(20000000, 7.0, 60) },
+    ];
 
     // Calculate monthly loan payment
     function calculatePayment(balance, rate, term) {
@@ -151,9 +155,9 @@
       const change = bank.month > 0 ? (bank.fedFundsRate - bank.fedFundsRateHistory[bank.fedFundsRateHistory.length - 2]).toFixed(2) : 0;
       document.getElementById('fedFundsChange').textContent = change;
       document.getElementById('fedFundsHistory').textContent = bank.fedFundsRateHistory.map(rate => rate.toFixed(2)).join(', ');
-      document.getElementById('demandResidentialMortgages').textContent = (bank.currentDemand[0] / 1000000).toFixed(2);
-      document.getElementById('demandCommercialRealEstate').textContent = (bank.currentDemand[1] / 1000000).toFixed(2);
-      document.getElementById('demandSmallBusinessLoans').textContent = (bank.currentDemand[2] / 1000000).toFixed(2);
+      document.getElementById('newLoans').textContent = (bank.newLoans / 1000000).toFixed(2);
+      document.getElementById('loanRunoff').textContent = (bank.loanRunoff / 1000000).toFixed(2);
+      document.getElementById('netLoanChange').textContent = (bank.netLoanChange / 1000000).toFixed(2);
     }
 
     // Advance month
@@ -176,34 +180,38 @@
       // Get decisions
       const depositRate = parseFloat(document.getElementById('depositRate').value);
       const loanRates = loanTypes.map(lt => parseFloat(document.getElementById(`rate${lt.name.replace(/\s/g, '')}`).value));
-      const originations = loanTypes.map(lt => parseFloat(document.getElementById(`orig${lt.name.replace(/\s/g, '')}`).value) * 1000000);
       const salesStaff = parseInt(document.getElementById('salesStaff').value);
       const techPackage = document.getElementById('techPackage').value;
 
       bank.staffing.sales = salesStaff;
       bank.technology = techPackage;
 
-      // Calculate deposit growth
+      // Calculate deposit growth (affected by deposit rate)
       const multiplier = techMultipliers[bank.technology];
       const annualDepositGrowth = scenario.depositGrowthBase + (depositRate - bank.marketDepositRate) * 10 + (bank.staffing.sales * 0.5 * multiplier);
       bank.deposits *= (1 + annualDepositGrowth / 100 / 12);
 
-      // Calculate current loan demand
+      // Calculate loan runoff rate (affected by staff, tech, and fed funds rate)
+      const baseRunoffRate = 0.005; // 0.5% per month
+      const fedFundsChange = bank.month > 0 ? bank.fedFundsRate - bank.fedFundsRateHistory[bank.fedFundsRateHistory.length - 2] : 0;
+      const runoffRate = baseRunoffRate * (1 - (bank.staffing.sales * 0.01 * multiplier)) - fedFundsChange * 0.002;
+      bank.loanRunoff = bank.loanPortfolio.reduce((sum, cohort) => sum + cohort.currentBalance * runoffRate, 0);
+
+      // Calculate new loan demand (affected by loan rates)
       const demandChanges = scenario.loanDemandChange;
       const loanDemands = loanTypes.map((lt, i) => {
-        const baseDemand = 10000000; // $10M base
+        const baseDemand = lt.initialDemand;
         const change = demandChanges[lt.name] !== undefined ? demandChanges[lt.name] : (demandChanges.all || 0);
-        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2;
+        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2; // Lower rates increase demand
         return baseDemand * (1 + change / 100) * rateEffect;
       });
-      bank.currentDemand = loanDemands;
 
-      // Originate loans
+      // Originate new loans based on demand and staff capacity
       const loanCapacityPerStaff = 5000000 * multiplier;
-      let totalCapacity = bank.staffing.sales * loanCapacityPerStaff;
-      let totalOriginated = 0;
-      loanTypes.forEach((lt, i) => {
-        const amount = Math.min(originations[i], loanDemands[i], totalCapacity - totalOriginated, bank.deposits * 0.9 + bank.capital - totalLoans());
+      const totalCapacity = bank.staffing.sales * loanCapacityPerStaff;
+      const lendingLimit = bank.deposits * 0.9 + bank.capital;
+      bank.newLoans = loanTypes.reduce((sum, lt, i) => {
+        const amount = Math.min(loanDemands[i], totalCapacity / loanTypes.length, lendingLimit - totalLoans());
         if (amount > 0) {
           bank.loanPortfolio.push({
             type: lt.name,
@@ -215,11 +223,11 @@
             remainingTerm: lt.term,
             payment: calculatePayment(amount, loanRates[i], lt.term),
           });
-          totalOriginated += amount;
         }
-      });
+        return sum + amount;
+      }, 0);
 
-      // Process loans
+      // Process loan portfolio
       let interestIncome = 0;
       let principalRepayments = 0;
       let totalLosses = 0;
@@ -240,7 +248,17 @@
         cohort.remainingTerm -= 1;
       });
 
-      // Deduct losses from capital (no provisions)
+      // Apply runoff
+      bank.loanPortfolio.forEach(cohort => {
+        const runoffAmount = cohort.currentBalance * runoffRate;
+        cohort.currentBalance -= runoffAmount;
+        bank.capital += runoffAmount; // Runoff pays off loans, increasing capital
+      });
+
+      // Update net loan change
+      bank.netLoanChange = bank.newLoans - bank.loanRunoff;
+
+      // Deduct losses from capital
       bank.capital -= totalLosses;
 
       // Calculate expenses
