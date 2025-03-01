@@ -24,7 +24,7 @@
     <div id="state">
       <h2>Month <span id="month">0</span></h2>
       <h3>Current Scenario: <span id="scenario">Starting Out</span></h3>
-      <p>Capital: <span id="capital">$20,000,000</span></p>
+      <p>Capital: <span id="capital">$10,000,000</span></p>
       <p>Deposits: <span id="deposits">$100,000,000</span></p>
       <p>Total Loans: <span id="totalLoans">$80,000,000</span></p>
       <p>Loan-to-Deposit Ratio: <span id="ldr">80.00</span>%</p>
@@ -32,8 +32,21 @@
       <p>Efficiency Ratio: <span id="efficiency">N/A</span>%</p>
       <p>Federal Funds Rate: <span id="fedFundsRate">2.00</span>% (Change: <span id="fedFundsChange">0.00</span>%)</p>
       <p>Federal Funds Rate History (Last 12 Months): <span id="fedFundsHistory">2.00</span></p>
-      <p><strong>Regulatory Lending Limit:</strong> Total loans cannot exceed 90% of deposits plus capital. Current limit: <span id="lendingLimit">$110,000,000</span></p>
-      <p><strong>Staffing Costs:</strong> <span id="staffingCosts">$0</span></p>
+      <p><strong>Regulatory Lending Limit:</strong> Total loans cannot exceed 90% of deposits plus capital. Current limit: <span id="lendingLimit">$100,000,000</span></p>
+      <p><strong>Staffing Costs Breakdown:</strong></p>
+      <ul>
+        <li>Branch Staff: <span id="branchStaffCost">$0</span> (Staff: <span id="branchStaffCount">0</span>)</li>
+        <li>Residential Lending Staff: <span id="residentialLendingStaffCost">$0</span> (Staff: <span id="residentialLendingStaffCount">0</span>)</li>
+        <li>Commercial Lending Staff: <span id="commercialLendingStaffCost">$0</span> (Staff: <span id="commercialLendingStaffCount">0</span>)</li>
+        <li>Small Business Lending Staff: <span id="smallBusinessLendingStaffCost">$0</span> (Staff: <span id="smallBusinessLendingStaffCount">0</span>)</li>
+        <li>Technology Staff: <span id="techStaffCost">$0</span> (Staff: <span id="techStaffCount">0</span>)</li>
+        <li>HR Staff: <span id="hrStaffCost">$0</span> (Staff: <span id="hrStaffCount">0</span>)</li>
+        <li>Compliance Staff: <span id="complianceStaffCost">$0</span> (Staff: <span id="complianceStaffCount">0</span>)</li>
+        <li>Executives: <span id="executivesCost">$0</span> (Staff: <span id="executivesCount">0</span>)</li>
+        <li>CEO: <span id="ceoCost">$0</span> (Staff: <span id="ceoCount">0</span>)</li>
+        <li>Sales Staff: <span id="salesStaffCost">$0</span> (Staff: <span id="salesStaffCount">0</span>)</li>
+        <li><strong>Total Staffing Costs: <span id="totalStaffingCosts">$0</span></strong></li>
+      </ul>
       <h3>Current Loan Demand ($M)</h3>
       <p>Residential Mortgages: <span id="demandResidentialMortgages">10.00</span></p>
       <p>Commercial Real Estate: <span id="demandCommercialRealEstate">7.00</span></p>
@@ -58,11 +71,12 @@
         <label>Sales Staff (Salary $6,000/month each, +0.5% annual deposit growth, reduces runoff): <input type="number" id="salesStaff" value="7" min="1"></label>
         <label>Technology Package: 
           <select id="techPackage">
-            <option value="basic">Basic ($1,000/month, no bonus)</option>
-            <option value="standard">Standard ($3,000/month, +10% staff effectiveness)</option>
-            <option value="advanced">Advanced ($5,000/month, +20% staff effectiveness)</option>
+            <option value="basic">Basic ($1,010/month, no bonus)</option>
+            <option value="standard">Standard ($3,010/month, +10% staff effectiveness)</option>
+            <option value="advanced">Advanced ($5,010/month, +20% staff effectiveness)</option>
           </select>
         </label>
+        <label>Advertising Budget ($/month, increases loan demand): <input type="number" id="advertisingBudget" value="0" min="0"></label>
       </div>
       <button type="submit">Submit Decisions</button>
     </form>
@@ -73,6 +87,7 @@
       <p>Non-Interest Expenses: <span id="nonInterestExpenses">$0</span></p>
       <p>Loan Losses: <span id="loanLosses">$0</span></p>
       <p>Net Profit: <span id="netProfit">$0</span></p>
+      <p><strong>Efficiency Ratio Explanation:</strong> The efficiency ratio is calculated as Non-Interest Expenses / Interest Income. A lower ratio indicates better cost management relative to income.</p>
     </div>
     <canvas id="chart" width="400" height="200"></canvas>
   </div>
@@ -84,8 +99,9 @@
       { name: 'Small Business Loans', marketRate: 7.0, defaultRate: 2.0, riskWeight: 100, term: 60, initialDemand: 5000000 },
     ];
 
-    // Define technology multipliers
+    // Define technology multipliers and updated costs
     const techMultipliers = { basic: 1.0, standard: 1.1, advanced: 1.2 };
+    const techCosts = { basic: 1010, standard: 3010, advanced: 5010 };
 
     // Define scenarios
     const scenarios = [
@@ -101,23 +117,23 @@
       { name: 'Regulatory Changes', loanDemandChange: { all: 0 }, depositGrowthBase: 0, interestRateChange: 0, defaultMultiplier: 1.0 },
     ];
 
-    // Initial bank state
+    // Initial bank state with reduced capital
     let bank = {
       month: 0,
-      capital: 20000000,
+      capital: 10000000, // Reduced by half
       deposits: 100000000,
       loanPortfolio: [],
       staffing: {
-        branch: 10, // 1 per $10M deposits
-        residentialLending: 8, // Based on $40M initial portfolio
-        commercialLending: 4, // Based on $20M initial portfolio
-        smallBusinessLending: 4, // Based on $20M initial portfolio
-        tech: 5, // Fixed
-        hr: 4, // 1 per 10 employees (initial guess)
-        compliance: 4, // Fixed
-        executives: 5, // Fixed
-        ceo: 1, // Fixed
-        sales: 7 // Default
+        branch: 5,
+        residentialLending: 4,
+        commercialLending: 2,
+        smallBusinessLending: 2,
+        tech: 3,
+        hr: 2,
+        compliance: 2,
+        executives: 3,
+        ceo: 1,
+        sales: 7
       },
       technology: 'basic',
       marketDepositRate: 2.0,
@@ -154,10 +170,12 @@
     // Update demand display dynamically
     function updateDemandDisplay() {
       const loanRates = loanTypes.map(lt => parseFloat(document.getElementById(`rate${lt.name.replace(/\s/g, '')}`).value));
+      const advertisingBudget = parseFloat(document.getElementById('advertisingBudget').value);
       const demands = loanTypes.map((lt, i) => {
         const baseDemand = lt.initialDemand;
         const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2;
-        return Math.max(0, baseDemand * rateEffect);
+        const advertisingEffect = 1 + (advertisingBudget / 100000); // +1% per $1,000 spent
+        return Math.max(0, baseDemand * rateEffect * advertisingEffect);
       });
       document.getElementById('demandResidentialMortgages').textContent = (demands[0] / 1000000).toFixed(2);
       document.getElementById('demandCommercialRealEstate').textContent = (demands[1] / 1000000).toFixed(2);
@@ -168,7 +186,27 @@
     const depositRateInput = document.getElementById('depositRate');
     const loanRateInputs = loanTypes.map(lt => document.getElementById(`rate${lt.name.replace(/\s/g, '')}`));
     const lendingLimitSpan = document.getElementById('lendingLimit');
-    const staffingCostsSpan = document.getElementById('staffingCosts');
+    const totalStaffingCostsSpan = document.getElementById('totalStaffingCosts');
+    const branchStaffCostSpan = document.getElementById('branchStaffCost');
+    const residentialLendingStaffCostSpan = document.getElementById('residentialLendingStaffCost');
+    const commercialLendingStaffCostSpan = document.getElementById('commercialLendingStaffCost');
+    const smallBusinessLendingStaffCostSpan = document.getElementById('smallBusinessLendingStaffCost');
+    const techStaffCostSpan = document.getElementById('techStaffCost');
+    const hrStaffCostSpan = document.getElementById('hrStaffCost');
+    const complianceStaffCostSpan = document.getElementById('complianceStaffCost');
+    const executivesCostSpan = document.getElementById('executivesCost');
+    const ceoCostSpan = document.getElementById('ceoCost');
+    const salesStaffCostSpan = document.getElementById('salesStaffCost');
+    const branchStaffCountSpan = document.getElementById('branchStaffCount');
+    const residentialLendingStaffCountSpan = document.getElementById('residentialLendingStaffCount');
+    const commercialLendingStaffCountSpan = document.getElementById('commercialLendingStaffCount');
+    const smallBusinessLendingStaffCountSpan = document.getElementById('smallBusinessLendingStaffCount');
+    const techStaffCountSpan = document.getElementById('techStaffCount');
+    const hrStaffCountSpan = document.getElementById('hrStaffCount');
+    const complianceStaffCountSpan = document.getElementById('complianceStaffCount');
+    const executivesCountSpan = document.getElementById('executivesCount');
+    const ceoCountSpan = document.getElementById('ceoCount');
+    const salesStaffCountSpan = document.getElementById('salesStaffCount');
 
     function updateMargins() {
       const depositRate = parseFloat(depositRateInput.value);
@@ -188,34 +226,60 @@
 
     // Update staffing
     function updateStaffing() {
-      bank.staffing.branch = Math.ceil(bank.deposits / 10000000); // 1 per $10M deposits
+      bank.staffing.branch = Math.ceil(bank.deposits / 20000000); // 1 per $20M deposits
       const residentialPortfolio = bank.loanPortfolio.filter(c => c.type === 'Residential Mortgages').reduce((s, c) => s + c.currentBalance, 0);
-      bank.staffing.residentialLending = Math.ceil(Math.max(bank.currentDemand[0], residentialPortfolio) / 5000000);
+      bank.staffing.residentialLending = Math.ceil(Math.max(bank.currentDemand[0], residentialPortfolio) / 10000000); // 1 per $10M
       const commercialPortfolio = bank.loanPortfolio.filter(c => c.type === 'Commercial Real Estate').reduce((s, c) => s + c.currentBalance, 0);
-      bank.staffing.commercialLending = Math.ceil(Math.max(bank.currentDemand[1], commercialPortfolio) / 5000000);
+      bank.staffing.commercialLending = Math.ceil(Math.max(bank.currentDemand[1], commercialPortfolio) / 10000000); // 1 per $10M
       const smallBusinessPortfolio = bank.loanPortfolio.filter(c => c.type === 'Small Business Loans').reduce((s, c) => s + c.currentBalance, 0);
-      bank.staffing.smallBusinessLending = Math.ceil(Math.max(bank.currentDemand[2], smallBusinessPortfolio) / 5000000);
-      bank.staffing.tech = 5; // Fixed
+      bank.staffing.smallBusinessLending = Math.ceil(Math.max(bank.currentDemand[2], smallBusinessPortfolio) / 10000000); // 1 per $10M
+      bank.staffing.tech = 3;
       const totalEmployees = bank.staffing.branch + bank.staffing.residentialLending + bank.staffing.commercialLending + 
                             bank.staffing.smallBusinessLending + bank.staffing.tech + bank.staffing.compliance + 
                             bank.staffing.executives + bank.staffing.ceo + bank.staffing.sales;
-      bank.staffing.hr = Math.ceil(totalEmployees / 10); // 1 per 10 employees
-      bank.staffing.compliance = 4; // Fixed
-      bank.staffing.executives = 5; // Fixed
-      bank.staffing.ceo = 1; // Fixed
+      bank.staffing.hr = Math.ceil(totalEmployees / 15); // 1 per 15 employees
+      bank.staffing.compliance = 2;
+      bank.staffing.executives = 3;
+      bank.staffing.ceo = 1;
     }
 
     // Update staffing costs display
     function updateStaffingCostsDisplay() {
       const branchStaffCost = bank.staffing.branch * 4000;
-      const lendingStaffCost = (bank.staffing.residentialLending + bank.staffing.commercialLending + bank.staffing.smallBusinessLending + bank.staffing.sales) * 6000;
+      const residentialLendingStaffCost = bank.staffing.residentialLending * 6000;
+      const commercialLendingStaffCost = bank.staffing.commercialLending * 6000;
+      const smallBusinessLendingStaffCost = bank.staffing.smallBusinessLending * 6000;
+      const salesStaffCost = bank.staffing.sales * 6000;
       const techStaffCost = bank.staffing.tech * 8000;
       const hrStaffCost = bank.staffing.hr * 5000;
       const complianceStaffCost = bank.staffing.compliance * 7000;
       const executivesCost = bank.staffing.executives * 10000;
       const ceoCost = bank.staffing.ceo * 20000;
-      bank.totalStaffingCosts = branchStaffCost + lendingStaffCost + techStaffCost + hrStaffCost + complianceStaffCost + executivesCost + ceoCost;
-      staffingCostsSpan.textContent = formatCurrency(bank.totalStaffingCosts);
+      bank.totalStaffingCosts = branchStaffCost + residentialLendingStaffCost + commercialLendingStaffCost + smallBusinessLendingStaffCost + 
+                                salesStaffCost + techStaffCost + hrStaffCost + complianceStaffCost + executivesCost + ceoCost;
+      
+      branchStaffCostSpan.textContent = formatCurrency(branchStaffCost);
+      residentialLendingStaffCostSpan.textContent = formatCurrency(residentialLendingStaffCost);
+      commercialLendingStaffCostSpan.textContent = formatCurrency(commercialLendingStaffCost);
+      smallBusinessLendingStaffCostSpan.textContent = formatCurrency(smallBusinessLendingStaffCost);
+      techStaffCostSpan.textContent = formatCurrency(techStaffCost);
+      hrStaffCostSpan.textContent = formatCurrency(hrStaffCost);
+      complianceStaffCostSpan.textContent = formatCurrency(complianceStaffCost);
+      executivesCostSpan.textContent = formatCurrency(executivesCost);
+      ceoCostSpan.textContent = formatCurrency(ceoCost);
+      salesStaffCostSpan.textContent = formatCurrency(salesStaffCost);
+      totalStaffingCostsSpan.textContent = formatCurrency(bank.totalStaffingCosts);
+
+      branchStaffCountSpan.textContent = bank.staffing.branch;
+      residentialLendingStaffCountSpan.textContent = bank.staffing.residentialLending;
+      commercialLendingStaffCountSpan.textContent = bank.staffing.commercialLending;
+      smallBusinessLendingStaffCountSpan.textContent = bank.staffing.smallBusinessLending;
+      techStaffCountSpan.textContent = bank.staffing.tech;
+      hrStaffCountSpan.textContent = bank.staffing.hr;
+      complianceStaffCountSpan.textContent = bank.staffing.compliance;
+      executivesCountSpan.textContent = bank.staffing.executives;
+      ceoCountSpan.textContent = bank.staffing.ceo;
+      salesStaffCountSpan.textContent = bank.staffing.sales;
     }
 
     // Update display
@@ -302,6 +366,7 @@
       const loanRates = loanTypes.map(lt => parseFloat(document.getElementById(`rate${lt.name.replace(/\s/g, '')}`).value));
       const salesStaff = parseInt(document.getElementById('salesStaff').value);
       const techPackage = document.getElementById('techPackage').value;
+      const advertisingBudget = parseFloat(document.getElementById('advertisingBudget').value);
 
       bank.staffing.sales = salesStaff;
       bank.technology = techPackage;
@@ -318,13 +383,14 @@
       const runoffRate = baseRunoffRate * (1 - (bank.staffing.sales * 0.01 * multiplier)) + runoffIncrease;
       bank.loanRunoff = bank.loanPortfolio.reduce((sum, cohort) => sum + cohort.currentBalance * runoffRate, 0);
 
-      // Calculate actual loan demand with scenario effects
+      // Calculate actual loan demand with scenario effects and advertising
       const demandChanges = scenario.loanDemandChange;
+      const advertisingEffect = 1 + (advertisingBudget / 100000); // +1% per $1,000 spent
       const loanDemands = loanTypes.map((lt, i) => {
         const baseDemand = lt.initialDemand;
         const change = demandChanges[lt.name] !== undefined ? demandChanges[lt.name] : (demandChanges.all || 0);
         const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2;
-        return Math.max(0, baseDemand * (1 + change / 100) * rateEffect);
+        return Math.max(0, baseDemand * (1 + change / 100) * rateEffect * advertisingEffect);
       });
       bank.currentDemand = loanDemands;
 
@@ -396,8 +462,7 @@
       // Calculate expenses
       const interestExpense = bank.deposits * (depositRate / 100 / 12);
       const salaryCost = bank.totalStaffingCosts;
-      const techCosts = { basic: 1000, standard: 3000, advanced: 5000 };
-      const nonInterestExpenses = salaryCost + techCosts[bank.technology];
+      const nonInterestExpenses = salaryCost + techCosts[bank.technology] + advertisingBudget;
 
       // Calculate profit
       const revenue = interestIncome;
@@ -448,6 +513,7 @@
       updateMargins();
       updateDemandDisplay();
     }));
+    document.getElementById('advertisingBudget').addEventListener('input', updateDemandDisplay);
     updateDisplay();
     updateMargins();
     updateDemandDisplay();
