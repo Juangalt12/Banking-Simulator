@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Bank Simulation</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #game { max-width: 900px; margin: auto; }
+    h1, h2, h3 { color: #333; }
+    label { display: block; margin: 10px 0; }
+    input, select { width: 100px; margin-left: 10px; }
+    #state, #results { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+    button { padding: 10px 20px; background-color: #007BFF; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+    .section { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <h1>Community Bank Simulation</h1>
+    <div id="state">
+      <h2>Month <span id="month">0</span></h2>
+      <h3>Current Scenario: <span id="scenario">Starting Out</span></h3>
+      <p>Capital: $<span id="capital">20000000.00</span></p>
+      <p>Deposits: $<span id="deposits">100000000.00</span></p>
+      <p>Total Loans: $<span id="totalLoans">0.00</span></p>
+      <p>Capital Adequacy Ratio: <span id="car">N/A</span>%</p>
+      <p>Efficiency Ratio: <span id="efficiency">N/A</span>%</p>
+    </div>
+    <form id="decisions">
+      <div class="section">
+        <h3>Decisions for Next Month</h3>
+        <label>Deposit Interest Rate (%): <input type="number" step="0.1" id="depositRate" value="2.0" min="0"></label>
+      </div>
+      <div class="section">
+        <h4>Loan Interest Rates (%)</h4>
+        <label>Residential Mortgages: <input type="number" step="0.1" id="rateResidentialMortgages" value="4.5" min="0"></label>
+        <label>Commercial Real Estate: <input type="number" step="0.1" id="rateCommercialRealEstate" value="5.5" min="0"></label>
+        <label>Small Business Loans: <input type="number" step="0.1" id="rateSmallBusinessLoans" value="7.0" min="0"></label>
+        <label>Auto Loans: <input type="number" step="0.1" id="rateAutoLoans" value="6.0" min="0"></label>
+        <label>Personal Loans: <input type="number" step="0.1" id="ratePersonalLoans" value="12.0" min="0"></label>
+      </div>
+      <div class="section">
+        <h4>Loan Originations ($ million)</h4>
+        <label>Residential Mortgages: <input type="number" step="0.1" id="origResidentialMortgages" value="0" min="0"></label>
+        <label>Commercial Real Estate: <input type="number" step="0.1" id="origCommercialRealEstate" value="0" min="0"></label>
+        <label>Small Business Loans: <input type="number" step="0.1" id="origSmallBusinessLoans" value="0" min="0"></label>
+        <label>Auto Loans: <input type="number" step="0.1" id="origAutoLoans" value="0" min="0"></label>
+        <label>Personal Loans: <input type="number" step="0.1" id="origPersonalLoans" value="0" min="0"></label>
+      </div>
+      <div class="section">
+        <label>Sales Staff (max $5M loans each): <input type="number" id="salesStaff" value="5" min="1"></label>
+        <label>Technology Package: 
+          <select id="techPackage">
+            <option value="basic">Basic ($1000/month)</option>
+            <option value="standard">Standard ($3000/month, -10% expenses)</option>
+            <option value="advanced">Advanced ($5000/month, -20% expenses, +10% capacity)</option>
+          </select>
+        </label>
+        <label>Monthly Provisions ($): <input type="number" id="provisions" value="0" min="0"></label>
+      </div>
+      <button type="submit">Submit Decisions</button>
+    </form>
+    <div id="results" style="display:none">
+      <h3>Monthly Results</h3>
+      <p>Interest Income: $<span id="interestIncome">0.00</span></p>
+      <p>Interest Expense: $<span id="interestExpense">0.00</span></p>
+      <p>Non-Interest Expenses: $<span id="nonInterestExpenses">0.00</span></p>
+      <p>Loan Losses: $<span id="provisionsUsed">0.00</span></p>
+      <p>Net Profit: $<span id="netProfit">0.00</span></p>
+    </div>
+  </div>
+  <script src="bankSimulation.js"></script>
+</body>
+</html>
