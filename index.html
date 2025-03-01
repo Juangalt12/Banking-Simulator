@@ -26,12 +26,13 @@
       <p>Capital: <span id="capital">$20,000,000</span></p>
       <p>Deposits: <span id="deposits">$100,000,000</span></p>
       <p>Total Loans: <span id="totalLoans">$80,000,000</span></p>
-      <p>Capital Adequacy Ratio: <span id="car">N/A</span>%</p>
+      <p>Loan-to-Deposit Ratio: <span id="ldr">80.00</span>%</p>
+      <p>Capital Adequacy Ratio (CAR): <span id="car">N/A</span>% (Regulatory Minimum: 10%)</p>
       <p>Efficiency Ratio: <span id="efficiency">N/A</span>%</p>
       <p>Federal Funds Rate: <span id="fedFundsRate">2.00</span>% (Change: <span id="fedFundsChange">0.00</span>%)</p>
       <p>Federal Funds Rate History (Last 12 Months): <span id="fedFundsHistory">2.00</span></p>
-      <p><strong>Regulatory Requirement:</strong> Lending is limited to 90% of deposits plus capital to maintain reserves.</p>
-      <p><strong>How Loan Originations Are Calculated:</strong> New loans are automatically determined each month based on demand, sales staff capacity, and the lending limit. Demand depends on your interest rates (e.g., lowering rates 1% below market increases demand by 20%). Each sales staff originates $5M in loans monthly, scaled by technology (Basic: 1x, Standard: 1.1x, Advanced: 1.2x), split equally across loan types. Originations are the minimum of demand or capacity per type, scaled down if total loans would exceed 90% of deposits plus capital.</p>
+      <p><strong>Regulatory Lending Limit:</strong> Total loans cannot exceed 90% of deposits plus capital. Current limit: <span id="lendingLimit">$110,000,000</span></p>
+      <p><strong>How Loan Originations Are Calculated:</strong> New loans are automatically determined each month based on demand, sales staff capacity, and the lending limit. Demand depends on your interest rates (e.g., lowering rates 1% below market increases demand by 20%). Each sales staff originates $5M in loans monthly, scaled by technology (Basic: 1x, Standard: 1.1x, Advanced: 1.2x), split equally across loan types. Originations are the minimum of demand or capacity per type, scaled down if total loans would exceed the lending limit.</p>
       <h3>Current Loan Demand ($M)</h3>
       <p>Residential Mortgages: <span id="demandResidentialMortgages">10.00</span></p>
       <p>Commercial Real Estate: <span id="demandCommercialRealEstate">7.00</span></p>
@@ -151,6 +152,7 @@
     // Update margins dynamically
     const depositRateInput = document.getElementById('depositRate');
     const loanRateInputs = loanTypes.map(lt => document.getElementById(`rate${lt.name.replace(/\s/g, '')}`));
+    const lendingLimitSpan = document.getElementById('lendingLimit');
 
     function updateMargins() {
       const depositRate = parseFloat(depositRateInput.value);
@@ -162,6 +164,12 @@
       });
     }
 
+    // Update lending limit display
+    function updateLendingLimitDisplay() {
+      const lendingLimit = bank.deposits * 0.9 + bank.capital;
+      lendingLimitSpan.textContent = formatCurrency(lendingLimit);
+    }
+
     // Update display
     function updateDisplay() {
       const totalLoansValue = totalLoans();
@@ -170,17 +178,17 @@
         return sum + typeBalance * (lt.riskWeight / 100);
       }, 0);
       const car = rwa > 0 ? (bank.capital / rwa) * 100 : 100;
-      const revenue = bank.lastInterestIncome || 0;
-      const expenses = bank.lastNonInterestExpenses || 0;
-      const efficiency = revenue > 0 ? (expenses / revenue) * 100 : 0;
+      const ldr = bank.deposits > 0 ? (totalLoansValue / bank.deposits) * 100 : 0;
+      const lendingLimit = bank.deposits * 0.9 + bank.capital;
 
       document.getElementById('month').textContent = bank.month;
       document.getElementById('scenario').textContent = bank.currentScenario ? bank.currentScenario.name : 'Starting Out';
       document.getElementById('capital').textContent = formatCurrency(bank.capital);
       document.getElementById('deposits').textContent = formatCurrency(bank.deposits);
       document.getElementById('totalLoans').textContent = formatCurrency(totalLoansValue);
+      document.getElementById('ldr').textContent = ldr.toFixed(2);
       document.getElementById('car').textContent = car.toFixed(2);
-      document.getElementById('efficiency').textContent = efficiency.toFixed(2);
+      document.getElementById('efficiency').textContent = (bank.lastNonInterestExpenses / bank.lastInterestIncome * 100).toFixed(2) || 'N/A';
       document.getElementById('fedFundsRate').textContent = bank.fedFundsRate.toFixed(2);
       const change = bank.month > 0 ? (bank.fedFundsRate - bank.fedFundsRateHistory[bank.fedFundsRateHistory.length - 2]).toFixed(2) : 0;
       document.getElementById('fedFundsChange').textContent = change;
@@ -188,6 +196,7 @@
       document.getElementById('newLoans').textContent = (bank.newLoans / 1000000).toFixed(2);
       document.getElementById('loanRunoff').textContent = (bank.loanRunoff / 1000000).toFixed(2);
       document.getElementById('netLoanChange').textContent = (bank.netLoanChange / 1000000).toFixed(2);
+      lendingLimitSpan.textContent = formatCurrency(lendingLimit);
     }
 
     // Total loans helper
@@ -329,7 +338,9 @@
         return sum + typeBalance * (lt.riskWeight / 100);
       }, 0);
       const car = rwa > 0 ? (bank.capital / rwa) * 100 : 100;
-      if (car < 10) alert('Warning: CAR below 10%. Loan originations restricted next month.');
+      if (car < 10) {
+        alert('Warning: CAR below 10%. Regulatory action may be required.');
+      }
 
       // Update results
       document.getElementById('interestIncome').textContent = formatCurrency(interestIncome);
@@ -344,6 +355,7 @@
       updateDisplay();
       updateMargins();
       updateDemandDisplay();
+      updateLendingLimitDisplay();
 
       if (bank.month >= 48) {
         alert(`Simulation Complete!\nFinal Capital: ${formatCurrency(bank.capital)}\nFinal CAR: ${car.toFixed(2)}%\nEfficiency Ratio: ${(nonInterestExpenses / revenue * 100).toFixed(2)}%`);
@@ -361,6 +373,7 @@
     updateDisplay();
     updateMargins();
     updateDemandDisplay();
+    updateLendingLimitDisplay();
   </script>
 </body>
 </html>
