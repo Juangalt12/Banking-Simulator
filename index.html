@@ -20,25 +20,28 @@
     button:hover { background-color: #0056b3; }
     .section { margin-top: 20px; }
     canvas { margin-top: 20px; }
-    .hack-scenario { color: red; font-weight: bold; }
+    .scenario { color: red; font-weight: bold; }
     .arrow { font-size: 1.2em; }
+    #introMessage { background-color: #007BFF; color: white; padding: 10px; margin-bottom: 10px; }
+    #dividendSection { display: none; }
   </style>
 </head>
 <body>
   <div id="game">
     <h1>Community Bank Simulation</h1>
+    <div id="introMessage">You’ve been hired as a consultant to run this community bank. The success or failure of the bank rests on your decisions over the next 48 months.</div>
     <div id="state">
       <h2>Month <span id="month">0</span></h2>
-      <h3>Current Scenario: <span id="scenario" class="">Starting Out</span></h3>
+      <h3>Current Scenario: <span id="scenario" class="scenario">Starting Out</span></h3>
       <p>Capital: <span id="capital">$10,000,000</span></p>
-      <p>Deposits: <span id="deposits">$100,000,000</span></p>
+      <p>Deposits: <span id="deposits">$50,000,000</span></p>
       <p>Total Loans: <span id="totalLoans">$80,000,000</span></p>
-      <p>Loan-to-Deposit Ratio: <span id="ldr">80.00</span>%</p>
+      <p>Loan-to-Deposit Ratio: <span id="ldr">160.00</span>%</p>
       <p>Capital Adequacy Ratio (CAR): <span id="car">N/A</span>% (Regulatory Minimum: 10%)</p>
       <p>Efficiency Ratio: <span id="efficiency">N/A</span>%</p>
       <p>Federal Funds Rate: <span id="fedFundsRate">2.00</span>% (Change: <span id="fedFundsChange">0.00</span>%)</p>
       <p>Federal Funds Rate History (Last 12 Months): <span id="fedFundsHistory">2.00</span></p>
-      <p><strong>Regulatory Lending Limit:</strong> Total loans cannot exceed 90% of deposits plus capital. Current limit: <span id="lendingLimit">$100,000,000</span></p>
+      <p><strong>Regulatory Lending Limit:</strong> Total loans cannot exceed 90% of deposits plus capital. Current limit: <span id="lendingLimit">$55,000,000</span></p>
       <p><strong>Staffing Costs Breakdown:</strong></p>
       <ul>
         <li>Branch Staff: <span id="branchStaffCost">$0</span> (Staff: <span id="branchStaffCount">0</span>)</li>
@@ -88,6 +91,18 @@
         </label>
         <label>Advertising Budget ($/month, increases loan demand): <input type="number" id="advertisingBudget" value="0" min="0" max="50000"></label>
         <p>Advertising increases loan demand by 0.5% per $1,000 spent monthly (e.g., $10,000 increases demand by 5%). Budget capped at $50,000.</p>
+        <div id="dividendSection">
+          <label>Quarterly Dividend ($): 
+            <select id="dividendPayout">
+              <option value="0">No Dividend ($0)</option>
+              <option value="50000">Low Dividend ($50,000)</option>
+              <option value="100000">Moderate Dividend ($100,000)</option>
+              <option value="200000">High Dividend ($200,000)</option>
+              <option value="400000">Very High Dividend ($400,000)</option>
+            </select>
+          </label>
+          <p id="shareholderWarning"></p>
+        </div>
       </div>
       <button type="submit">Submit Decisions</button>
     </form>
@@ -121,7 +136,7 @@
     const techMultipliers = { basic: 1.0, standard: 1.1, advanced: 1.2 };
     const techCosts = { basic: 1010, standard: 3010, advanced: 5010 };
 
-    // Define scenarios with increased impact (multiplied by 1.5)
+    // Define scenarios with increased impact
     const scenarios = [
       { name: 'Economic Boom', loanDemandChange: { all: 15 }, depositGrowthBase: 7.5, interestRateChange: 0, defaultMultiplier: 0.7 },
       { name: 'Recession', loanDemandChange: { all: -22.5 }, depositGrowthBase: 15, interestRateChange: -2.5, defaultMultiplier: 2.0 },
@@ -135,11 +150,20 @@
       { name: 'Regulatory Changes', loanDemandChange: { all: 0 }, depositGrowthBase: 0, interestRateChange: 0, defaultMultiplier: 1.0 },
     ];
 
-    // Initial bank state
+    // Define hack scenario
+    const hackScenario = {
+      name: 'The Bank Has Been Hacked!',
+      loanDemandChange: { all: -20 },
+      depositGrowthBase: 0,
+      interestRateChange: 0,
+      defaultMultiplier: 1.0,
+    };
+
+    // Initial bank state with lower deposits
     let bank = {
       month: 0,
       capital: 10000000,
-      deposits: 100000000,
+      deposits: 50000000,
       loanPortfolio: [],
       staffing: {
         branch: 5,
@@ -158,6 +182,7 @@
       marketLoanRates: loanTypes.map(lt => lt.marketRate),
       fedFundsRate: 2.0,
       fedFundsRateHistory: [2.0],
+      fullFedFundsHistory: [2.0],
       newLoans: 0,
       loanRunoff: 0,
       netLoanChange: 0,
@@ -167,8 +192,11 @@
       totalDepositsHistory: [],
       efficiencyRatioHistory: [],
       previousTotalLoans: 80000000,
-      previousTotalDeposits: 100000000,
-      previousTotalStaff: 29
+      previousTotalDeposits: 50000000,
+      previousTotalStaff: 29,
+      hackTriggered: false,
+      hackEffect: 0,
+      dividendSatisfaction: 100
     };
 
     // Start with $80M in outstanding loans
@@ -193,11 +221,12 @@
     function updateDemandDisplay() {
       const loanRates = loanTypes.map(lt => parseFloat(document.getElementById(`rate${lt.name.replace(/\s/g, '')}`).value));
       const advertisingBudget = parseFloat(document.getElementById('advertisingBudget').value);
+      const salesStaff = parseInt(document.getElementById('salesStaff').value);
+      const demandMultiplier = 1 + (advertisingBudget / 1000) * 0.005 + salesStaff * 0.005;
       const demands = loanTypes.map((lt, i) => {
         const baseDemand = lt.initialDemand;
         const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2;
-        const advertisingEffect = 1 + (advertisingBudget / 100000);
-        return Math.max(0, baseDemand * rateEffect * advertisingEffect);
+        return Math.max(0, baseDemand * rateEffect * demandMultiplier);
       });
       document.getElementById('demandResidentialMortgages').textContent = (demands[0] / 1000000).toFixed(2);
       document.getElementById('demandCommercialRealEstate').textContent = (demands[1] / 1000000).toFixed(2);
@@ -235,6 +264,10 @@
     const arrowTotalDepositsSpan = document.getElementById('arrowTotalDeposits');
     const changeTotalStaffSpan = document.getElementById('changeTotalStaff');
     const arrowTotalStaffSpan = document.getElementById('arrowTotalStaff');
+    const totalStaffCountSpan = document.getElementById('totalStaffCount');
+    const shareholderWarningSpan = document.getElementById('shareholderWarning');
+    const dividendSection = document.getElementById('dividendSection');
+    const dividendPayout = document.getElementById('dividendPayout');
 
     function updateMargins() {
       const depositRate = parseFloat(depositRateInput.value);
@@ -308,7 +341,7 @@
       executivesCountSpan.textContent = bank.staffing.executives;
       ceoCountSpan.textContent = bank.staffing.ceo;
       salesStaffCountSpan.textContent = bank.staffing.sales;
-      document.getElementById('totalStaffCount').textContent = totalStaff();
+      totalStaffCountSpan.textContent = totalStaff();
     }
 
     // Total staff helper
@@ -335,6 +368,7 @@
 
       document.getElementById('month').textContent = bank.month;
       document.getElementById('scenario').textContent = bank.currentScenario ? bank.currentScenario.name : 'Starting Out';
+      document.getElementById('scenario').classList.add('scenario');
       document.getElementById('capital').textContent = formatCurrency(bank.capital);
       document.getElementById('deposits').textContent = formatCurrency(bank.deposits);
       document.getElementById('totalLoans').textContent = formatCurrency(totalLoansValue);
@@ -350,6 +384,18 @@
       document.getElementById('netLoanChange').textContent = (bank.netLoanChange / 1000000).toFixed(2);
       lendingLimitSpan.textContent = formatCurrency(lendingLimit);
       updateStaffingCostsDisplay();
+
+      // Hide intro message after Month 1
+      if (bank.month > 1) {
+        document.getElementById('introMessage').style.display = 'none';
+      }
+
+      // Show dividend options every 4 months with 80% chance
+      if (bank.month > 0 && bank.month % 4 === 0 && Math.random() < 0.8) {
+        dividendSection.style.display = 'block';
+      } else {
+        dividendSection.style.display = 'none';
+      }
 
       // Update monthly changes with arrows
       const loanChange = (totalLoansValue - bank.previousTotalLoans) / 1000000;
@@ -417,7 +463,7 @@
       loansDepositsChart.update();
 
       fedFundsChart.data.labels = labels;
-      fedFundsChart.data.datasets[0].data = bank.fedFundsRateHistory;
+      fedFundsChart.data.datasets[0].data = bank.fullFedFundsHistory;
       fedFundsChart.update();
     }
 
@@ -425,13 +471,25 @@
     function advanceMonth(event) {
       event.preventDefault();
 
-      const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+      // Select scenario with hack logic
+      let scenario;
+      if (bank.hackEffect > 0) {
+        scenario = hackScenario;
+        bank.hackEffect -= 1;
+      } else if (!bank.hackTriggered && bank.month >= 5 && bank.month <= 40 && Math.random() < 0.1) {
+        bank.hackTriggered = true;
+        bank.hackEffect = 2;
+        scenario = hackScenario;
+      } else {
+        scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+      }
       bank.currentScenario = scenario;
 
       // Update federal funds rate
       bank.fedFundsRate += scenario.interestRateChange || 0;
       bank.fedFundsRate = Math.max(0, bank.fedFundsRate);
       bank.fedFundsRateHistory.push(bank.fedFundsRate);
+      bank.fullFedFundsHistory.push(bank.fedFundsRate);
       if (bank.fedFundsRateHistory.length > 12) bank.fedFundsRateHistory.shift();
 
       // Adjust market rates
@@ -439,11 +497,12 @@
       bank.marketLoanRates = bank.marketLoanRates.map(rate => Math.max(0, rate + (scenario.interestRateChange || 0)));
 
       // Get decisions
-      const depositRate = parseFloat(document.getElementById('depositRate').value);
+      const depositRate = parseFloat(depositRateInput.value);
       const loanRates = loanTypes.map(lt => parseFloat(document.getElementById(`rate${lt.name.replace(/\s/g, '')}`).value));
       const salesStaff = parseInt(document.getElementById('salesStaff').value);
       const techPackage = document.getElementById('techPackage').value;
       const advertisingBudget = parseFloat(document.getElementById('advertisingBudget').value);
+      const dividend = dividendSection.style.display === 'block' ? parseInt(dividendPayout.value) : 0;
 
       bank.staffing.sales = salesStaff;
       bank.technology = techPackage;
@@ -455,7 +514,8 @@
 
       // Calculate deposit growth
       const multiplier = techMultipliers[bank.technology];
-      const annualDepositGrowth = scenario.depositGrowthBase + (depositRate - bank.marketDepositRate) * 10 + (bank.staffing.sales * 0.5 * multiplier);
+      let annualDepositGrowth = scenario.depositGrowthBase + (depositRate - bank.marketDepositRate) * 10 + (bank.staffing.sales * 0.5 * multiplier);
+      if (scenario === hackScenario) annualDepositGrowth *= 0.8; // 20% reduction during hack
       bank.deposits *= (1 + annualDepositGrowth / 100 / 12);
 
       // Calculate loan runoff rate
@@ -465,14 +525,16 @@
       const runoffRate = baseRunoffRate * (1 - (bank.staffing.sales * 0.01 * multiplier)) + runoffIncrease;
       bank.loanRunoff = bank.loanPortfolio.reduce((sum, cohort) => sum + cohort.currentBalance * runoffRate, 0);
 
-      // Calculate loan demand with scenario effects and advertising
+      // Calculate loan demand with scenario effects and boosts
       const demandChanges = scenario.loanDemandChange;
-      const advertisingEffect = 1 + (advertisingBudget / 100000);
+      const demandMultiplier = 1 + (advertisingBudget / 1000) * 0.005 + salesStaff * 0.005;
       const loanDemands = loanTypes.map((lt, i) => {
         const baseDemand = lt.initialDemand;
         const change = demandChanges[lt.name] !== undefined ? demandChanges[lt.name] : (demandChanges.all || 0);
         const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2;
-        return Math.max(0, baseDemand * (1 + change / 100) * rateEffect * advertisingEffect);
+        let demand = baseDemand * (1 + change / 100) * rateEffect * demandMultiplier;
+        if (scenario === hackScenario) demand *= 0.8; // 20% reduction during hack
+        return Math.max(0, demand);
       });
       bank.currentDemand = loanDemands;
 
@@ -547,6 +609,34 @@
       const salaryCost = bank.totalStaffingCosts;
       const nonInterestExpenses = salaryCost + techCosts[bank.technology] + advertisingBudget;
 
+      // Handle dividend payout
+      if (dividendSection.style.display === 'block') {
+        bank.capital -= dividend;
+        switch (dividend) {
+          case 0:
+            shareholderWarningSpan.textContent = 'Shareholders are unhappy with no dividend. Risk of firing increases.';
+            bank.dividendSatisfaction -= 20;
+            break;
+          case 50000:
+            shareholderWarningSpan.textContent = 'Shareholders accept this modest dividend but expect more growth.';
+            bank.dividendSatisfaction -= 10;
+            break;
+          case 100000:
+            shareholderWarningSpan.textContent = 'Shareholders are satisfied with this reasonable payout.';
+            bank.dividendSatisfaction += 5;
+            break;
+          case 200000:
+            shareholderWarningSpan.textContent = 'Shareholders are pleased but note the impact on capital reserves.';
+            bank.dividendSatisfaction += 10;
+            break;
+          case 400000:
+            shareholderWarningSpan.textContent = 'Shareholders are thrilled, but this may strain bank liquidity.';
+            bank.dividendSatisfaction += 15;
+            break;
+        }
+        if (bank.dividendSatisfaction > 100) bank.dividendSatisfaction = 100;
+      }
+
       // Calculate profit
       const revenue = interestIncome;
       const expenses = interestExpense + nonInterestExpenses + totalLosses;
@@ -578,6 +668,13 @@
       document.getElementById('loanLosses').textContent = formatCurrency(totalLosses);
       document.getElementById('netProfit').textContent = formatCurrency(netProfit);
       document.getElementById('results').style.display = 'block';
+
+      // Check firing condition
+      if (bank.dividendSatisfaction < 25) {
+        alert('You have been fired due to insufficient dividend payouts! Shareholders are dissatisfied with your performance.');
+        document.querySelector('#decisions button').disabled = true;
+        return;
+      }
 
       // Advance month
       bank.month += 1;
@@ -611,6 +708,17 @@
       updateDemandDisplay();
     }));
     document.getElementById('advertisingBudget').addEventListener('input', updateDemandDisplay);
+    document.getElementById('salesStaff').addEventListener('input', updateDemandDisplay);
+    dividendPayout.addEventListener('change', () => {
+      const value = parseInt(dividendPayout.value);
+      switch (value) {
+        case 0: shareholderWarningSpan.textContent = 'Shareholders are unhappy with no dividend. Risk of firing increases.'; break;
+        case 50000: shareholderWarningSpan.textContent = 'Shareholders accept this modest dividend but expect more growth.'; break;
+        case 100000: shareholderWarningSpan.textContent = 'Shareholders are satisfied with this reasonable payout.'; break;
+        case 200000: shareholderWarningSpan.textContent = 'Shareholders are pleased but note the impact on capital reserves.'; break;
+        case 400000: shareholderWarningSpan.textContent = 'Shareholders are thrilled, but this may strain bank liquidity.'; break;
+      }
+    });
     updateDisplay();
     updateMargins();
     updateDemandDisplay();
