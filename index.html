@@ -66,46 +66,48 @@
       <p>Loan Runoff: <span id="loanRunoff">0.00</span></p>
       <p>Net Loan Change: <span id="netLoanChange">0.00</span></p>
     </div>
-    <form id="decisions">
-      <div class="section">
-        <h3>Decisions for Next Month</h3>
-        <label>Deposit Interest Rate (%): <input type="number" step="0.1" id="depositRate" value="2.0" min="0"></label>
-        <p>Higher rates attract more deposits (e.g., +1% rate increases growth by 10%).</p>
-      </div>
-      <div class="section">
-        <h4>Loan Interest Rates (%)</h4>
-        <p>Lower rates increase loan demand (e.g., -1% rate boosts demand by 20%).</p>
-        <label>Residential Mortgages: <input type="number" step="0.1" id="rateResidentialMortgages" value="4.5" min="0"> <span id="marginResidentialMortgages"></span></label>
-        <label>Commercial Real Estate: <input type="number" step="0.1" id="rateCommercialRealEstate" value="5.5" min="0"> <span id="marginCommercialRealEstate"></span></label>
-        <label>Small Business Loans: <input type="number" step="0.1" id="rateSmallBusinessLoans" value="7.0" min="0"> <span id="marginSmallBusinessLoans"></span></label>
-      </div>
-      <div class="section">
-        <label>Sales Staff (Salary $6,000/month each): <input type="number" id="salesStaff" value="7" min="1"></label>
-        <p>Each sales staff increases loan origination capacity and reduces loan runoff.</p>
-        <label>Technology Package: 
-          <select id="techPackage">
-            <option value="basic">Basic ($1,010/month, no bonus)</option>
-            <option value="standard">Standard ($3,010/month, +10% staff effectiveness)</option>
-            <option value="advanced">Advanced ($5,010/month, +20% staff effectiveness)</option>
-          </select>
-        </label>
-        <label>Advertising Budget ($/month, increases loan demand): <input type="number" id="advertisingBudget" value="0" min="0" max="50000"></label>
-        <p>Advertising increases loan demand by 0.5% per $1,000 spent monthly (e.g., $10,000 increases demand by 5%). Budget capped at $50,000.</p>
-        <div id="dividendSection">
-          <label>Quarterly Dividend ($): 
-            <select id="dividendPayout">
-              <option value="0">No Dividend ($0)</option>
-              <option value="50000">Low Dividend ($50,000)</option>
-              <option value="100000">Moderate Dividend ($100,000)</option>
-              <option value="200000">High Dividend ($200,000)</option>
-              <option value="400000">Very High Dividend ($400,000)</option>
-            </select>
-          </label>
-          <p id="shareholderWarning"></p>
-        </div>
-      </div>
-      <button type="submit">Submit Decisions</button>
-    </form>
+<form id="decisions">
+  <div id="dividendSection" class="section" style="display: none;">
+    <h4><strong>Quarterly Dividend Payout</strong></h4>
+    <p>Every 4 months, shareholders typically (80% chance) demand a dividend payout reflecting the bank’s performance. You’ll choose from five options: No Dividend ($0), Low ($50,000), Moderate ($100,000), High ($200,000), or Very High ($400,000). The amount you select is deducted from your capital, impacting your ability to grow loans or cushion losses. Your choice affects shareholder satisfaction (starting at 100): $0 reduces it by 20, $50,000 by 10, $100,000 increases it by 5, $200,000 by 10, and $400,000 by 15. If satisfaction drops below 25, shareholders may fire you, ending the game. Paying too little risks dismissal, while paying too much could weaken your bank’s financial stability—balance wisely!</p>
+    <label>Dividend Amount ($): 
+      <select id="dividendPayout">
+        <option value="0">No Dividend ($0)</option>
+        <option value="50000">Low Dividend ($50,000)</option>
+        <option value="100000">Moderate Dividend ($100,000)</option>
+        <option value="200000">High Dividend ($200,000)</option>
+        <option value="400000">Very High Dividend ($400,000)</option>
+      </select>
+    </label>
+    <p id="shareholderWarning"></p>
+  </div>
+  <div class="section">
+    <h3>Decisions for Next Month</h3>
+    <label>Deposit Interest Rate (%): <input type="number" step="0.1" id="depositRate" value="2.0" min="0"></label>
+    <p>Higher rates attract more deposits (e.g., +1% rate increases growth by 10%).</p>
+  </div>
+  <div class="section">
+    <h4>Loan Interest Rates (%)</h4>
+    <p>Lower rates increase loan demand (e.g., -1% rate boosts demand by 20%).</p>
+    <label>Residential Mortgages: <input type="number" step="0.1" id="rateResidentialMortgages" value="4.5" min="0"> <span id="marginResidentialMortgages"></span></label>
+    <label>Commercial Real Estate: <input type="number" step="0.1" id="rateCommercialRealEstate" value="5.5" min="0"> <span id="marginCommercialRealEstate"></span></label>
+    <label>Small Business Loans: <input type="number" step="0.1" id="rateSmallBusinessLoans" value="7.0" min="0"> <span id="marginSmallBusinessLoans"></span></label>
+  </div>
+  <div class="section">
+    <label>Sales Staff (Salary $6,000/month each): <input type="number" id="salesStaff" value="7" min="1"></label>
+    <p>Each sales staff increases loan origination capacity and reduces loan runoff.</p>
+    <label>Technology Package: 
+      <select id="techPackage">
+        <option value="basic">Basic ($1,010/month, no bonus)</option>
+        <option value="standard">Standard ($3,010/month, +10% staff effectiveness)</option>
+        <option value="advanced">Advanced ($5,010/month, +20% staff effectiveness)</option>
+      </select>
+    </label>
+    <label>Advertising Budget ($/month, increases loan demand): <input type="number" id="advertisingBudget" value="0" min="0" max="50000"></label>
+    <p>Advertising increases loan demand by 0.5% per $1,000 spent monthly (e.g., $10,000 increases demand by 5%). Budget capped at $50,000.</p>
+  </div>
+  <button type="submit">Submit Decisions</button>
+</form>
     <div id="results" style="display:none">
       <h3>Monthly Results</h3>
       <p>Interest Income: <span id="interestIncome">$0</span></p>
