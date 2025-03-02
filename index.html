@@ -181,47 +181,47 @@
     };
 
     // Initial bank state with adjusted deposits, loans, and CAR
-    let bank = {
-      month: 0,
-      capital: 68000000,
-      deposits: 9000000,
-      loanPortfolio: [],
-      staffing: {
-        branch: 5,
-        residentialLending: 4,
-        commercialLending: 2,
-        smallBusinessLending: 2,
-        tech: 3,
-        hr: 2,
-        compliance: 2,
-        executives: 3,
-        ceo: 1,
-        sales: 7
-      },
-      technology: 'basic',
-      marketDepositRate: 2.0,
-      marketLoanRates: loanTypes.map(lt => lt.marketRate),
-      fedFundsRate: 2.0,
-      fedFundsRateHistory: [2.0],
-      fullFedFundsHistory: [2.0],
-      newLoans: 0,
-      loanRunoff: 0,
-      netLoanChange: 0,
-      currentDemand: [10000000, 7000000, 5000000],
-      totalStaffingCosts: 0,
-      totalLoansHistory: [],
-      totalDepositsHistory: [],
-      efficiencyRatioHistory: [],
-      monthlyLoanVolumeHistory: { 'Residential Mortgages': [], 'Commercial Real Estate': [], 'Small Business Loans': [] },
-      previousTotalLoans: 132000000,
-      previousTotalDeposits: 9000000,
-      previousTotalStaff: 29,
-      hackTriggered: false,
-      hackEffect: 0,
-      dividendSatisfaction: 100,
-      scenarioDuration: 0,
-      scenarioRemaining: 0
-    };
+let bank = {
+  month: 0,
+  capital: 10000000, // Changed from 68000000 to 10000000
+  deposits: 9000000,
+  loanPortfolio: [],
+  staffing: {
+    branch: 5,
+    residentialLending: 4,
+    commercialLending: 2,
+    smallBusinessLending: 2,
+    tech: 3,
+    hr: 2,
+    compliance: 2,
+    executives: 3,
+    ceo: 1,
+    sales: 7
+  },
+  technology: 'basic',
+  marketDepositRate: 2.0,
+  marketLoanRates: loanTypes.map(lt => lt.marketRate),
+  fedFundsRate: 2.0,
+  fedFundsRateHistory: [2.0],
+  fullFedFundsHistory: [2.0],
+  newLoans: 0,
+  loanRunoff: 0,
+  netLoanChange: 0,
+  currentDemand: [10000000, 7000000, 5000000],
+  totalStaffingCosts: 0,
+  totalLoansHistory: [],
+  totalDepositsHistory: [],
+  efficiencyRatioHistory: [],
+  monthlyLoanVolumeHistory: { 'Residential Mortgages': [], 'Commercial Real Estate': [], 'Small Business Loans': [] },
+  previousTotalLoans: 132000000,
+  previousTotalDeposits: 9000000,
+  previousTotalStaff: 29,
+  hackTriggered: false,
+  hackEffect: 0,
+  dividendSatisfaction: 100,
+  scenarioDuration: 0,
+  scenarioRemaining: 0
+};
 
     // Start with $132M in outstanding loans
     bank.loanPortfolio = [
