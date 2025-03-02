@@ -11,10 +11,21 @@
     h1, h2, h3 { color: #333; }
     label { display: block; margin: 10px 0; }
     input, select { width: 100px; margin-left: 10px; }
-    #state, #decisions, #results, #charts {
+    #state, #decisions, #charts {
       border: 1px dotted #ccc;
       padding: 15px;
       margin: 10px 0;
+    }
+    #topSection {
+      display: flex;
+      justify-content: space-between;
+      border: 1px dotted #ccc;
+      padding: 15px;
+      margin: 10px 0;
+    }
+    #currentScenario, #dividendSection, #results {
+      flex: 1;
+      margin: 0 5px;
     }
     button { padding: 10px 20px; background-color: #007BFF; color: white; border: none; cursor: pointer; }
     button:hover { background-color: #0056b3; }
@@ -30,44 +41,13 @@
   <div id="game">
     <h1>Community Bank Simulation</h1>
     <div id="introMessage">You’ve been hired as a consultant to run this community bank. The success or failure of the bank rests on your decisions over the next 48 months.</div>
-    <div id="state">
-      <h2>Month <span id="month">0</span></h2>
-      <h3>Current Scenario: <span id="scenario" class="scenario">Starting Out</span></h3>
-      <p>Capital: <span id="capital">$10,000,000</span></p>
-      <p>Deposits: <span id="deposits">$50,000,000</span></p>
-      <p>Total Loans: <span id="totalLoans">$80,000,000</span></p>
-      <p>Loan-to-Deposit Ratio: <span id="ldr">160.00</span>%</p>
-      <p>Capital Adequacy Ratio (CAR): <span id="car">N/A</span>% (Regulatory Minimum: 10%)</p>
-      <p>Efficiency Ratio: <span id="efficiency">N/A</span>%</p>
-      <p>Federal Funds Rate: <span id="fedFundsRate">2.00</span>% (Change: <span id="fedFundsChange">0.00</span>%)</p>
-      <p>Federal Funds Rate History (Last 12 Months): <span id="fedFundsHistory">2.00</span></p>
-      <p><strong>Regulatory Lending Limit:</strong> Total loans cannot exceed 90% of deposits plus capital. Current limit: <span id="lendingLimit">$55,000,000</span></p>
-      <p><strong>Staffing Costs Breakdown:</strong></p>
-      <ul>
-        <li>Branch Staff: <span id="branchStaffCost">$0</span> (Staff: <span id="branchStaffCount">0</span>)</li>
-        <li>Residential Lending Staff: <span id="residentialLendingStaffCost">$0</span> (Staff: <span id="residentialLendingStaffCount">0</span>)</li>
-        <li>Commercial Lending Staff: <span id="commercialLendingStaffCost">$0</span> (Staff: <span id="commercialLendingStaffCount">0</span>)</li>
-        <li>Small Business Lending Staff: <span id="smallBusinessLendingStaffCost">$0</span> (Staff: <span id="smallBusinessLendingStaffCount">0</span>)</li>
-        <li>Technology Staff: <span id="techStaffCost">$0</span> (Staff: <span id="techStaffCount">0</span>)</li>
-        <li>HR Staff: <span id="hrStaffCost">$0</span> (Staff: <span id="hrStaffCount">0</span>)</li>
-        <li>Compliance Staff: <span id="complianceStaffCost">$0</span> (Staff: <span id="complianceStaffCount">0</span>)</li>
-        <li>Executives: <span id="executivesCost">$0</span> (Staff: <span id="executivesCount">0</span>)</li>
-        <li>CEO: <span id="ceoCost">$0</span> (Staff: <span id="ceoCount">0</span>)</li>
-        <li>Sales Staff: <span id="salesStaffCost">$0</span> (Staff: <span id="salesStaffCount">0</span>)</li>
-        <li><strong>Total Staffing Costs: <span id="totalStaffingCosts">$0</span></strong></li>
-        <li><strong>Total Staff: <span id="totalStaffCount">0</span></strong></li>
-      </ul>
-      <h3>Current Loan Demand ($M)</h3>
-      <p>Residential Mortgages: <span id="demandResidentialMortgages">10.00</span></p>
-      <p>Commercial Real Estate: <span id="demandCommercialRealEstate">7.00</span></p>
-      <p>Small Business Loans: <span id="demandSmallBusinessLoans">5.00</span></p>
-      <h3>Loan Activity ($M)</h3>
-      <p>New Loans: <span id="newLoans">0.00</span></p>
-      <p>Loan Runoff: <span id="loanRunoff">0.00</span></p>
-      <p>Net Loan Change: <span id="netLoanChange">0.00</span></p>
-    </div>
-    <form id="decisions">
-      <div id="dividendSection" class="section" style="display: none;">
+    <div id="topSection">
+      <div id="currentScenario">
+        <h2>Month <span id="month">0</span></h2>
+        <h3>Current Scenario: <span id="scenario" class="scenario">Starting Out</span></h3>
+        <p>Shareholder Satisfaction: <span id="shareholderSatisfaction">100</span></p>
+      </div>
+      <div id="dividendSection" class="section">
         <h4><strong>Quarterly Dividend Payout</strong></h4>
         <p>Every 4 months, shareholders typically (80% chance) demand a dividend payout reflecting the bank’s performance. You’ll choose from five options: No Dividend ($0), Low ($50,000), Moderate ($100,000), High ($200,000), or Very High ($400,000). The amount you select is deducted from your capital, impacting your ability to grow loans or cushion losses. Your choice affects shareholder satisfaction (starting at 100): $0 reduces it by 20, $50,000 by 10, $100,000 increases it by 5, $200,000 by 10, and $400,000 by 15. If satisfaction drops below 25, shareholders may fire you, ending the game. Paying too little risks dismissal, while paying too much could weaken your bank’s financial stability—balance wisely!</p>
         <label>Dividend Amount ($): 
@@ -81,6 +61,55 @@
         </label>
         <p id="shareholderWarning"></p>
       </div>
+      <div id="results" style="display:none">
+        <h3>Monthly Results</h3>
+        <p>Interest Income: <span id="interestIncome">$0</span></p>
+        <p>Interest Expense: <span id="interestExpense">$0</span></p>
+        <p>Non-Interest Expenses: <span id="nonInterestExpenses">$0</span></p>
+        <p>Loan Losses: <span id="loanLosses">$0</span></p>
+        <p>Net Profit: <span id="netProfit">$0</span></p>
+        <p><strong>Efficiency Ratio Explanation:</strong> Calculated as Non-Interest Expenses / Interest Income. Lower is better.</p>
+        <p>Change in Total Loans: <span id="changeTotalLoans">0.00</span>M <span id="arrowTotalLoans"></span></p>
+        <p>Change in Total Deposits: <span id="changeTotalDeposits">0.00</span>M <span id="arrowTotalDeposits"></span></p>
+        <p>Change in Total Staff: <span id="changeTotalStaff">0</span> <span id="arrowTotalStaff"></span></p>
+      </div>
+    </div>
+    <div id="state">
+      <p>Capital: <span id="capital">$10,000,000</span></p>
+      <p>Deposits: <span id="deposits">$9,000,000</span></p>
+      <p>Total Loans: <span id="totalLoans">$132,000,000</span></p>
+      <p>Loan-to-Deposit Ratio: <span id="ldr">1466.67</span>%</p>
+      <p>Capital Adequacy Ratio (CAR): <span id="car">43.00</span>% (Regulatory Minimum: 10%)</p>
+      <p>Efficiency Ratio: <span id="efficiency">N/A</span>%</p>
+      <p>Federal Funds Rate: <span id="fedFundsRate">2.00</span>% (Change: <span id="fedFundsChange">0.00</span>%)</p>
+      <p>Federal Funds Rate History (Last 12 Months): <span id="fedFundsHistory">2.00</span></p>
+      <p><strong>Regulatory Lending Limit:</strong> Total loans cannot exceed 90% of deposits plus capital. Current limit: <span id="lendingLimit">$76,100,000</span></p>
+      <p><strong>Staffing Costs Breakdown:</strong></p>
+      <ul>
+        <li>Branch Staff: <span id="branchStaffCost">$0</span> (Staff: <span id="branchStaffCount">0</span>)</li>
+        <li>Residential Lending Staff: <span id="residentialLendingStaffCost">$0</span> (Staff: <span id="residentialLendingStaffCount">0</span>)</li>
+        <li>Commercial Lending Staff: <span id="commercialLendingStaffCost">$0</span> (Staff: <span id="commercialLendingStaffCount">0</span>)</li>
+        <li>Small Business Lending Staff: <span id="smallBusinessLendingStaffCost">$0</span> (Staff: <span id="smallBusinessLendingStaffCount">0</span>)</li>
+        <li>Technology Staff: <span id="techStaffCost">$0</span> (Staff: <span id="techStaffCount">0</span>)</li>
+        <li>HR Staff: <span id="hrStaffCost">$0</span> (Staff: <span id="hrStaffCount">0</span>)</li>
+        <li>Compliance Staff: <span id="complianceStaffCost">$0</span> (Staff: <span id="complianceStaffCount">0</span>)</li>
+        <li>Executives: <span id="executivesCost">$0</span> (Staff: <span id="executivesCount">0</span>)</li>
+        <li>CEO: <span id="ceoCost">$0</span> (Staff: <span id="ceoCount">0</span>)</li>
+        <li>Sales Staff: <span id="salesStaffCost">$0</span> (Staff: <span id="salesStaffCount">0</span>)</li>
+        <li>Consultant: <span id="consultantCost">$12,000</span></li>
+        <li><strong>Total Staffing Costs: <span id="totalStaffingCosts">$0</span></strong></li>
+        <li><strong>Total Staff: <span id="totalStaffCount">0</span></strong></li>
+      </ul>
+      <h3>Current Loan Demand ($M)</h3>
+      <p>Residential Mortgages: <span id="demandResidentialMortgages">10.00</span></p>
+      <p>Commercial Real Estate: <span id="demandCommercialRealEstate">7.00</span></p>
+      <p>Small Business Loans: <span id="demandSmallBusinessLoans">5.00</span></p>
+      <h3>Loan Activity ($M)</h3>
+      <p>New Loans: <span id="newLoans">0.00</span></p>
+      <p>Loan Runoff: <span id="loanRunoff">0.00</span></p>
+      <p>Net Loan Change: <span id="netLoanChange">0.00</span></p>
+    </div>
+    <form id="decisions">
       <div class="section">
         <h3>Decisions for Next Month</h3>
         <label>Deposit Interest Rate (%): <input type="number" step="0.1" id="depositRate" value="2.0" min="0"></label>
@@ -94,7 +123,7 @@
         <label>Small Business Loans: <input type="number" step="0.1" id="rateSmallBusinessLoans" value="7.0" min="0"> <span id="marginSmallBusinessLoans"></span></label>
       </div>
       <div class="section">
-        <label>Sales Staff (Salary $6,000/month each): <input type="number" id="salesStaff" value="7" min="1"></label>
+        <label>Sales Staff (Salary $7,000/month each): <input type="number" id="salesStaff" value="7" min="1"></label>
         <p>Each sales staff increases loan origination capacity and reduces loan runoff.</p>
         <label>Technology Package: 
           <select id="techPackage">
@@ -108,22 +137,12 @@
       </div>
       <button type="submit">Submit Decisions</button>
     </form>
-    <div id="results" style="display:none">
-      <h3>Monthly Results</h3>
-      <p>Interest Income: <span id="interestIncome">$0</span></p>
-      <p>Interest Expense: <span id="interestExpense">$0</span></p>
-      <p>Non-Interest Expenses: <span id="nonInterestExpenses">$0</span></p>
-      <p>Loan Losses: <span id="loanLosses">$0</span></p>
-      <p>Net Profit: <span id="netProfit">$0</span></p>
-      <p><strong>Efficiency Ratio Explanation:</strong> The efficiency ratio is calculated as Non-Interest Expenses / Interest Income. A lower ratio indicates better cost management relative to income.</p>
-      <p>Change in Total Loans: <span id="changeTotalLoans">0.00</span>M <span id="arrowTotalLoans"></span></p>
-      <p>Change in Total Deposits: <span id="changeTotalDeposits">0.00</span>M <span id="arrowTotalDeposits"></span></p>
-      <p>Change in Total Staff: <span id="changeTotalStaff">0</span> <span id="arrowTotalStaff"></span></p>
-    </div>
     <div id="charts">
       <canvas id="efficiencyChart" width="400" height="200"></canvas>
       <canvas id="loansDepositsChart" width="400" height="200"></canvas>
       <canvas id="fedFundsChart" width="400" height="200"></canvas>
+      <canvas id="monthlyLoanVolumesChart" width="400" height="200"></canvas>
+      <canvas id="totalLoanVolumesChart" width="400" height="200"></canvas>
     </div>
   </div>
   <script>
@@ -161,11 +180,11 @@
       defaultMultiplier: 1.0,
     };
 
-    // Initial bank state with lower deposits
+    // Initial bank state with adjusted deposits, loans, and CAR
     let bank = {
       month: 0,
-      capital: 10000000,
-      deposits: 50000000,
+      capital: 68000000,
+      deposits: 9000000,
       loanPortfolio: [],
       staffing: {
         branch: 5,
@@ -193,19 +212,22 @@
       totalLoansHistory: [],
       totalDepositsHistory: [],
       efficiencyRatioHistory: [],
-      previousTotalLoans: 80000000,
-      previousTotalDeposits: 50000000,
+      monthlyLoanVolumeHistory: { 'Residential Mortgages': [], 'Commercial Real Estate': [], 'Small Business Loans': [] },
+      previousTotalLoans: 132000000,
+      previousTotalDeposits: 9000000,
       previousTotalStaff: 29,
       hackTriggered: false,
       hackEffect: 0,
-      dividendSatisfaction: 100
+      dividendSatisfaction: 100,
+      scenarioDuration: 0,
+      scenarioRemaining: 0
     };
 
-    // Start with $80M in outstanding loans
+    // Start with $132M in outstanding loans
     bank.loanPortfolio = [
-      { type: 'Residential Mortgages', originationMonth: -12, initialBalance: 40000000, currentBalance: 38000000, rate: 4.5, term: 360, remainingTerm: 348, payment: calculatePayment(40000000, 4.5, 360) },
-      { type: 'Commercial Real Estate', originationMonth: -6, initialBalance: 20000000, currentBalance: 19000000, rate: 5.5, term: 120, remainingTerm: 114, payment: calculatePayment(20000000, 5.5, 120) },
-      { type: 'Small Business Loans', originationMonth: -3, initialBalance: 20000000, currentBalance: 19500000, rate: 7.0, term: 60, remainingTerm: 57, payment: calculatePayment(20000000, 7.0, 60) },
+      { type: 'Residential Mortgages', originationMonth: -12, initialBalance: 60000000, currentBalance: 58000000, rate: 4.5, term: 360, remainingTerm: 348, payment: calculatePayment(60000000, 4.5, 360) },
+      { type: 'Commercial Real Estate', originationMonth: -6, initialBalance: 40000000, currentBalance: 39000000, rate: 5.5, term: 120, remainingTerm: 114, payment: calculatePayment(40000000, 5.5, 120) },
+      { type: 'Small Business Loans', originationMonth: -3, initialBalance: 35000000, currentBalance: 34000000, rate: 7.0, term: 60, remainingTerm: 57, payment: calculatePayment(35000000, 7.0, 60) },
     ];
 
     // Calculate monthly loan payment
@@ -227,7 +249,7 @@
       const demandMultiplier = 1 + (advertisingBudget / 1000) * 0.005 + salesStaff * 0.005;
       const demands = loanTypes.map((lt, i) => {
         const baseDemand = lt.initialDemand;
-        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2;
+        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.4;
         return Math.max(0, baseDemand * rateEffect * demandMultiplier);
       });
       document.getElementById('demandResidentialMortgages').textContent = (demands[0] / 1000000).toFixed(2);
@@ -250,6 +272,7 @@
     const executivesCostSpan = document.getElementById('executivesCost');
     const ceoCostSpan = document.getElementById('ceoCost');
     const salesStaffCostSpan = document.getElementById('salesStaffCost');
+    const consultantCostSpan = document.getElementById('consultantCost');
     const branchStaffCountSpan = document.getElementById('branchStaffCount');
     const residentialLendingStaffCountSpan = document.getElementById('residentialLendingStaffCount');
     const commercialLendingStaffCountSpan = document.getElementById('commercialLendingStaffCount');
@@ -270,6 +293,7 @@
     const shareholderWarningSpan = document.getElementById('shareholderWarning');
     const dividendSection = document.getElementById('dividendSection');
     const dividendPayout = document.getElementById('dividendPayout');
+    const shareholderSatisfactionSpan = document.getElementById('shareholderSatisfaction');
 
     function updateMargins() {
       const depositRate = parseFloat(depositRateInput.value);
@@ -308,18 +332,19 @@
 
     // Update staffing costs display
     function updateStaffingCostsDisplay() {
-      const branchStaffCost = bank.staffing.branch * 4000;
-      const residentialLendingStaffCost = bank.staffing.residentialLending * 6000;
-      const commercialLendingStaffCost = bank.staffing.commercialLending * 6000;
-      const smallBusinessLendingStaffCost = bank.staffing.smallBusinessLending * 6000;
-      const salesStaffCost = bank.staffing.sales * 6000;
-      const techStaffCost = bank.staffing.tech * 8000;
-      const hrStaffCost = bank.staffing.hr * 5000;
-      const complianceStaffCost = bank.staffing.compliance * 7000;
-      const executivesCost = bank.staffing.executives * 10000;
-      const ceoCost = bank.staffing.ceo * 20000;
+      const branchStaffCost = bank.staffing.branch * 5000;
+      const residentialLendingStaffCost = bank.staffing.residentialLending * 7000;
+      const commercialLendingStaffCost = bank.staffing.commercialLending * 7000;
+      const smallBusinessLendingStaffCost = bank.staffing.smallBusinessLending * 7000;
+      const salesStaffCost = bank.staffing.sales * 7000;
+      const techStaffCost = bank.staffing.tech * 9000;
+      const hrStaffCost = bank.staffing.hr * 6000;
+      const complianceStaffCost = bank.staffing.compliance * 8000;
+      const executivesCost = bank.staffing.executives * 11000;
+      const ceoCost = bank.staffing.ceo * 25000;
+      const consultantCost = 12000;
       bank.totalStaffingCosts = branchStaffCost + residentialLendingStaffCost + commercialLendingStaffCost + smallBusinessLendingStaffCost + 
-                                salesStaffCost + techStaffCost + hrStaffCost + complianceStaffCost + executivesCost + ceoCost;
+                                salesStaffCost + techStaffCost + hrStaffCost + complianceStaffCost + executivesCost + ceoCost + consultantCost;
       
       branchStaffCostSpan.textContent = formatCurrency(branchStaffCost);
       residentialLendingStaffCostSpan.textContent = formatCurrency(residentialLendingStaffCost);
@@ -331,6 +356,7 @@
       executivesCostSpan.textContent = formatCurrency(executivesCost);
       ceoCostSpan.textContent = formatCurrency(ceoCost);
       salesStaffCostSpan.textContent = formatCurrency(salesStaffCost);
+      consultantCostSpan.textContent = formatCurrency(consultantCost);
       totalStaffingCostsSpan.textContent = formatCurrency(bank.totalStaffingCosts);
 
       branchStaffCountSpan.textContent = bank.staffing.branch;
@@ -371,6 +397,7 @@
       document.getElementById('month').textContent = bank.month;
       document.getElementById('scenario').textContent = bank.currentScenario ? bank.currentScenario.name : 'Starting Out';
       document.getElementById('scenario').classList.add('scenario');
+      shareholderSatisfactionSpan.textContent = bank.dividendSatisfaction;
       document.getElementById('capital').textContent = formatCurrency(bank.capital);
       document.getElementById('deposits').textContent = formatCurrency(bank.deposits);
       document.getElementById('totalLoans').textContent = formatCurrency(totalLoansValue);
@@ -421,7 +448,7 @@
       arrowTotalStaffSpan.textContent = staffChange > 0 ? '↑' : staffChange < 0 ? '↓' : '';
     }
 
-    // Update charts
+    // Update charts with annotations
     const efficiencyChartCtx = document.getElementById('efficiencyChart').getContext('2d');
     const efficiencyChart = new Chart(efficiencyChartCtx, {
       type: 'line',
@@ -430,7 +457,19 @@
         datasets: [{ label: 'Efficiency Ratio (%)', data: [], borderColor: 'red' }],
       },
       options: {
-        scales: { y: { title: { display: true, text: 'Efficiency Ratio (%)' } } }
+        scales: { y: { title: { display: true, text: 'Efficiency Ratio (%)' } } },
+        plugins: {
+          annotation: {
+            annotations: [{
+              type: 'line',
+              xMin: 7,
+              xMax: 7,
+              borderColor: 'red',
+              borderWidth: 2,
+              label: { content: 'Hack', enabled: true, position: 'top' }
+            }]
+          }
+        }
       },
     });
 
@@ -445,7 +484,19 @@
         ],
       },
       options: {
-        scales: { y: { title: { display: true, text: 'Amount ($M)' } } }
+        scales: { y: { title: { display: true, text: 'Amount ($M)' } } },
+        plugins: {
+          annotation: {
+            annotations: [{
+              type: 'line',
+              xMin: 7,
+              xMax: 7,
+              borderColor: 'red',
+              borderWidth: 2,
+              label: { content: 'Hack', enabled: true, position: 'top' }
+            }]
+          }
+        }
       },
     });
 
@@ -457,7 +508,75 @@
         datasets: [{ label: 'Federal Funds Rate (%)', data: [], borderColor: 'purple' }],
       },
       options: {
-        scales: { y: { title: { display: true, text: 'Federal Funds Rate (%)' } } }
+        scales: { y: { title: { display: true, text: 'Federal Funds Rate (%)' } } },
+        plugins: {
+          annotation: {
+            annotations: [{
+              type: 'line',
+              xMin: 7,
+              xMax: 7,
+              borderColor: 'red',
+              borderWidth: 2,
+              label: { content: 'Hack', enabled: true, position: 'top' }
+            }]
+          }
+        }
+      },
+    });
+
+    const monthlyLoanVolumesChartCtx = document.getElementById('monthlyLoanVolumesChart').getContext('2d');
+    const monthlyLoanVolumesChart = new Chart(monthlyLoanVolumesChartCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'Residential Mortgages ($M)', data: [], borderColor: 'orange', fill: false },
+          { label: 'Commercial Real Estate ($M)', data: [], borderColor: 'cyan', fill: false },
+          { label: 'Small Business Loans ($M)', data: [], borderColor: 'pink', fill: false },
+        ],
+      },
+      options: {
+        scales: { y: { title: { display: true, text: 'Monthly Volume ($M)' } } },
+        plugins: {
+          annotation: {
+            annotations: [{
+              type: 'line',
+              xMin: 7,
+              xMax: 7,
+              borderColor: 'red',
+              borderWidth: 2,
+              label: { content: 'Hack', enabled: true, position: 'top' }
+            }]
+          }
+        }
+      },
+    });
+
+    const totalLoanVolumesChartCtx = document.getElementById('totalLoanVolumesChart').getContext('2d');
+    const totalLoanVolumesChart = new Chart(totalLoanVolumesChartCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'Residential Mortgages ($M)', data: [], borderColor: 'orange' },
+          { label: 'Commercial Real Estate ($M)', data: [], borderColor: 'cyan' },
+          { label: 'Small Business Loans ($M)', data: [], borderColor: 'pink' },
+        ],
+      },
+      options: {
+        scales: { y: { title: { display: true, text: 'Total Volume ($M)' } } },
+        plugins: {
+          annotation: {
+            annotations: [{
+              type: 'line',
+              xMin: 7,
+              xMax: 7,
+              borderColor: 'red',
+              borderWidth: 2,
+              label: { content: 'Hack', enabled: true, position: 'top' }
+            }]
+          }
+        }
       },
     });
 
@@ -475,23 +594,43 @@
       fedFundsChart.data.labels = labels;
       fedFundsChart.data.datasets[0].data = bank.fullFedFundsHistory;
       fedFundsChart.update();
+
+      monthlyLoanVolumesChart.data.labels = labels;
+      monthlyLoanVolumesChart.data.datasets[0].data = bank.monthlyLoanVolumeHistory['Residential Mortgages'].map(v => v / 1000000);
+      monthlyLoanVolumesChart.data.datasets[1].data = bank.monthlyLoanVolumeHistory['Commercial Real Estate'].map(v => v / 1000000);
+      monthlyLoanVolumesChart.data.datasets[2].data = bank.monthlyLoanVolumeHistory['Small Business Loans'].map(v => v / 1000000);
+      monthlyLoanVolumesChart.update();
+
+      totalLoanVolumesChart.data.labels = labels;
+      const residentialTotal = bank.loanPortfolio.filter(c => c.type === 'Residential Mortgages').map(c => c.currentBalance / 1000000);
+      const commercialTotal = bank.loanPortfolio.filter(c => c.type === 'Commercial Real Estate').map(c => c.currentBalance / 1000000);
+      const smallBusinessTotal = bank.loanPortfolio.filter(c => c.type === 'Small Business Loans').map(c => c.currentBalance / 1000000);
+      totalLoanVolumesChart.data.datasets[0].data = Array(bank.month + 1).fill(0).map((_, i) => i < residentialTotal.length ? residentialTotal[i] : residentialTotal[residentialTotal.length - 1]);
+      totalLoanVolumesChart.data.datasets[1].data = Array(bank.month + 1).fill(0).map((_, i) => i < commercialTotal.length ? commercialTotal[i] : commercialTotal[commercialTotal.length - 1]);
+      totalLoanVolumesChart.data.datasets[2].data = Array(bank.month + 1).fill(0).map((_, i) => i < smallBusinessTotal.length ? smallBusinessTotal[i] : smallBusinessTotal[smallBusinessTotal.length - 1]);
+      totalLoanVolumesChart.update();
     }
 
     // Advance month
     function advanceMonth(event) {
       event.preventDefault();
 
-      // Select scenario with hack logic
+      // Select scenario with duration logic
       let scenario;
-      if (bank.hackEffect > 0) {
-        scenario = hackScenario;
-        bank.hackEffect -= 1;
-      } else if (!bank.hackTriggered && bank.month >= 5 && bank.month <= 40 && Math.random() < 0.1) {
+      if (bank.month === 7) {
         bank.hackTriggered = true;
         bank.hackEffect = 2;
         scenario = hackScenario;
+      } else if (bank.hackEffect > 0) {
+        scenario = hackScenario;
+        bank.hackEffect -= 1;
+      } else if (bank.scenarioRemaining > 0) {
+        scenario = bank.currentScenario;
+        bank.scenarioRemaining -= 1;
       } else {
         scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+        bank.scenarioDuration = Math.floor(Math.random() * 3) + 2; // 2-4 months
+        bank.scenarioRemaining = bank.scenarioDuration - 1;
       }
       bank.currentScenario = scenario;
 
@@ -522,28 +661,28 @@
       bank.previousTotalDeposits = bank.deposits;
       bank.previousTotalStaff = totalStaff();
 
-      // Calculate deposit growth
+      // Calculate deposit growth with macro impact
       const multiplier = techMultipliers[bank.technology];
-      let annualDepositGrowth = scenario.depositGrowthBase + (depositRate - bank.marketDepositRate) * 10 + (bank.staffing.sales * 0.5 * multiplier);
-      if (scenario === hackScenario) annualDepositGrowth *= 0.8; // 20% reduction during hack
+      const fedFundsChange = bank.month > 0 ? bank.fedFundsRate - bank.fedFundsRateHistory[bank.fedFundsRateHistory.length - 2] : 0;
+      let annualDepositGrowth = scenario.depositGrowthBase + (depositRate - bank.marketDepositRate) * 10 + (bank.staffing.sales * 0.5 * multiplier) - fedFundsChange * 5;
+      if (scenario === hackScenario) annualDepositGrowth *= 0.8;
       bank.deposits *= (1 + annualDepositGrowth / 100 / 12);
 
-      // Calculate loan runoff rate
-      const baseRunoffRate = 0.005;
-      const fedFundsChange = bank.month > 0 ? bank.fedFundsRate - bank.fedFundsRateHistory[bank.fedFundsRateHistory.length - 2] : 0;
+      // Calculate loan runoff rate with 30% increase
+      const baseRunoffRate = 0.0065; // Increased from 0.005 by 30%
       const runoffIncrease = Math.max(0, -fedFundsChange * 0.001);
       const runoffRate = baseRunoffRate * (1 - (bank.staffing.sales * 0.01 * multiplier)) + runoffIncrease;
       bank.loanRunoff = bank.loanPortfolio.reduce((sum, cohort) => sum + cohort.currentBalance * runoffRate, 0);
 
-      // Calculate loan demand with scenario effects and boosts
+      // Calculate loan demand with increased macro impact
       const demandChanges = scenario.loanDemandChange;
       const demandMultiplier = 1 + (advertisingBudget / 1000) * 0.005 + salesStaff * 0.005;
       const loanDemands = loanTypes.map((lt, i) => {
         const baseDemand = lt.initialDemand;
-        const change = demandChanges[lt.name] !== undefined ? demandChanges[lt.name] : (demandChanges.all || 0);
-        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2;
+        const change = (demandChanges[lt.name] !== undefined ? demandChanges[lt.name] : (demandChanges.all || 0)) * 2; // Doubled impact
+        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.4;
         let demand = baseDemand * (1 + change / 100) * rateEffect * demandMultiplier;
-        if (scenario === hackScenario) demand *= 0.8; // 20% reduction during hack
+        if (scenario === hackScenario) demand *= 0.8;
         return Math.max(0, demand);
       });
       bank.currentDemand = loanDemands;
@@ -561,6 +700,7 @@
 
       const scaleFactor = totalPotential > 0 ? Math.min(1, availableLending / totalPotential) : 0;
       bank.newLoans = 0;
+      const monthlyVolumes = { 'Residential Mortgages': 0, 'Commercial Real Estate': 0, 'Small Business Loans': 0 };
 
       loanTypes.forEach((lt, i) => {
         let origination = potentialOriginations[i] * scaleFactor;
@@ -577,8 +717,12 @@
             payment: calculatePayment(origination, loanRates[i], lt.term),
           });
           bank.newLoans += origination;
+          monthlyVolumes[lt.name] = origination;
         }
       });
+      bank.monthlyLoanVolumeHistory['Residential Mortgages'].push(monthlyVolumes['Residential Mortgages']);
+      bank.monthlyLoanVolumeHistory['Commercial Real Estate'].push(monthlyVolumes['Commercial Real Estate']);
+      bank.monthlyLoanVolumeHistory['Small Business Loans'].push(monthlyVolumes['Small Business Loans']);
 
       // Process loan portfolio
       let interestIncome = 0;
@@ -711,6 +855,9 @@
     bank.totalLoansHistory.push(totalLoans());
     bank.totalDepositsHistory.push(bank.deposits);
     bank.efficiencyRatioHistory.push(0);
+    bank.monthlyLoanVolumeHistory['Residential Mortgages'].push(0);
+    bank.monthlyLoanVolumeHistory['Commercial Real Estate'].push(0);
+    bank.monthlyLoanVolumeHistory['Small Business Loans'].push(0);
     document.getElementById('decisions').addEventListener('submit', advanceMonth);
     depositRateInput.addEventListener('input', updateMargins);
     loanRateInputs.forEach(input => input.addEventListener('input', () => {
