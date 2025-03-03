@@ -155,7 +155,7 @@
     ];
 
     // Define technology multipliers and costs
-    const techMultipliers = { basic: 1.0, standard: 1.1, advanced: 1.2 };
+    const techMultipliers = { basic: 1.0, standard: 1.1, advanced: 1.5 }; // Increased advanced multiplier
     const techCosts = { basic: 1010, standard: 3010, advanced: 5010 };
 
     // Define scenarios
@@ -214,6 +214,11 @@
       totalDepositsHistory: [],
       efficiencyRatioHistory: [],
       monthlyLoanVolumeHistory: { 'Residential Mortgages': [], 'Commercial Real Estate': [], 'Small Business Loans': [] },
+      totalLoanTypeHistory: { 
+        'Residential Mortgages': [58000000], 
+        'Commercial Real Estate': [39000000], 
+        'Small Business Loans': [34000000] 
+      },
       previousTotalLoans: 132000000,
       previousTotalDeposits: 12000000,
       previousTotalStaff: 29,
@@ -247,10 +252,10 @@
       const loanRates = loanTypes.map(lt => parseFloat(document.getElementById(`rate${lt.name.replace(/\s/g, '')}`).value));
       const advertisingBudget = parseFloat(document.getElementById('advertisingBudget').value);
       const salesStaff = parseInt(document.getElementById('salesStaff').value);
-      const demandMultiplier = 1 + (advertisingBudget / 1000) * 0.005 + salesStaff * 0.005;
+      const demandMultiplier = 1 + (advertisingBudget / 1000) * 0.01 + salesStaff * 0.01; // Increased multipliers
       const demands = loanTypes.map((lt, i) => {
         const baseDemand = lt.initialDemand;
-        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.4;
+        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2; // Reduced rate penalty
         return Math.max(0, baseDemand * rateEffect * demandMultiplier);
       });
       document.getElementById('demandResidentialMortgages').textContent = (demands[0] / 1000000).toFixed(2);
@@ -315,18 +320,18 @@
 
     // Update staffing
     function updateStaffing() {
-      bank.staffing.branch = Math.ceil(bank.deposits / 20000000); // 1 per $20M deposits
+      bank.staffing.branch = Math.ceil(bank.deposits / 20000000);
       const residentialPortfolio = bank.loanPortfolio.filter(c => c.type === 'Residential Mortgages').reduce((s, c) => s + c.currentBalance, 0);
-      bank.staffing.residentialLending = Math.ceil(Math.max(bank.currentDemand[0], residentialPortfolio) / 10000000); // 1 per $10M
+      bank.staffing.residentialLending = Math.ceil(Math.max(bank.currentDemand[0], residentialPortfolio) / 10000000);
       const commercialPortfolio = bank.loanPortfolio.filter(c => c.type === 'Commercial Real Estate').reduce((s, c) => s + c.currentBalance, 0);
-      bank.staffing.commercialLending = Math.ceil(Math.max(bank.currentDemand[1], commercialPortfolio) / 10000000); // 1 per $10M
+      bank.staffing.commercialLending = Math.ceil(Math.max(bank.currentDemand[1], commercialPortfolio) / 10000000);
       const smallBusinessPortfolio = bank.loanPortfolio.filter(c => c.type === 'Small Business Loans').reduce((s, c) => s + c.currentBalance, 0);
-      bank.staffing.smallBusinessLending = Math.ceil(Math.max(bank.currentDemand[2], smallBusinessPortfolio) / 10000000); // 1 per $10M
+      bank.staffing.smallBusinessLending = Math.ceil(Math.max(bank.currentDemand[2], smallBusinessPortfolio) / 10000000);
       bank.staffing.tech = 5;
       const totalEmployees = bank.staffing.branch + bank.staffing.residentialLending + bank.staffing.commercialLending + 
                             bank.staffing.smallBusinessLending + bank.staffing.tech + bank.staffing.compliance + 
                             bank.staffing.executives + bank.staffing.ceo + bank.staffing.sales;
-      bank.staffing.hr = Math.ceil(totalEmployees / 15); // 1 per 15 employees
+      bank.staffing.hr = Math.ceil(totalEmployees / 15);
       bank.staffing.compliance = 4;
       bank.staffing.executives = 5;
       bank.staffing.ceo = 1;
@@ -531,19 +536,10 @@
       monthlyLoanVolumesChart.data.datasets[2].data = bank.monthlyLoanVolumeHistory['Small Business Loans'].map(v => v / 1000000);
       monthlyLoanVolumesChart.update();
 
-      const residentialTotal = bank.totalLoansHistory.map((_, i) => 
-        bank.loanPortfolio.filter(c => c.type === 'Residential Mortgages' && c.originationMonth <= i)
-          .reduce((s, c) => s + c.currentBalance, 0) / 1000000);
-      const commercialTotal = bank.totalLoansHistory.map((_, i) => 
-        bank.loanPortfolio.filter(c => c.type === 'Commercial Real Estate' && c.originationMonth <= i)
-          .reduce((s, c) => s + c.currentBalance, 0) / 1000000);
-      const smallBusinessTotal = bank.totalLoansHistory.map((_, i) => 
-        bank.loanPortfolio.filter(c => c.type === 'Small Business Loans' && c.originationMonth <= i)
-          .reduce((s, c) => s + c.currentBalance, 0) / 1000000);
       totalLoanVolumesChart.data.labels = labels;
-      totalLoanVolumesChart.data.datasets[0].data = residentialTotal;
-      totalLoanVolumesChart.data.datasets[1].data = commercialTotal;
-      totalLoanVolumesChart.data.datasets[2].data = smallBusinessTotal;
+      totalLoanVolumesChart.data.datasets[0].data = bank.totalLoanTypeHistory['Residential Mortgages'].map(v => v / 1000000);
+      totalLoanVolumesChart.data.datasets[1].data = bank.totalLoanTypeHistory['Commercial Real Estate'].map(v => v / 1000000);
+      totalLoanVolumesChart.data.datasets[2].data = bank.totalLoanTypeHistory['Small Business Loans'].map(v => v / 1000000);
       totalLoanVolumesChart.update();
     }
 
@@ -594,58 +590,60 @@
 
       const multiplier = techMultipliers[bank.technology];
       const fedFundsChange = bank.month > 0 ? bank.fedFundsRate - bank.fedFundsRateHistory[bank.fedFundsRateHistory.length - 2] : 0;
-      let annualDepositGrowth = scenario.depositGrowthBase / 2 + (depositRate - bank.marketDepositRate) * 5 + (bank.staffing.sales * 0.5 * multiplier) - fedFundsChange;
+      let annualDepositGrowth = scenario.depositGrowthBase + (depositRate - bank.marketDepositRate) * 10 + (bank.staffing.sales * 0.5 * multiplier) - fedFundsChange; // Increased deposit growth
       if (scenario === hackScenario) annualDepositGrowth *= 0.8;
       bank.deposits *= (1 + annualDepositGrowth / 100 / 12);
 
-      const baseRunoffRate = 0.005;
+      const baseRunoffRate = 0.002; // Reduced runoff rate
       const runoffIncrease = Math.max(0, -fedFundsChange * 0.001);
-      const runoffRate = baseRunoffRate * (1 - (bank.staffing.sales * 0.01 * multiplier)) + runoffIncrease;
+      const runoffRate = baseRunoffRate * (1 - (bank.staffing.sales * 0.02 * multiplier)) + runoffIncrease; // Increased staff impact
       bank.loanRunoff = bank.loanPortfolio.reduce((sum, cohort) => sum + cohort.currentBalance * runoffRate, 0);
 
       const demandChanges = scenario.loanDemandChange;
-      const demandMultiplier = 1 + (advertisingBudget / 1000) * 0.005 + salesStaff * 0.005;
+      const demandMultiplier = 1 + (advertisingBudget / 1000) * 0.01 + salesStaff * 0.01; // Increased multipliers
       const loanDemands = loanTypes.map((lt, i) => {
         const baseDemand = lt.initialDemand;
         const change = (demandChanges[lt.name] !== undefined ? demandChanges[lt.name] : (demandChanges.all || 0));
-        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.4;
+        const rateEffect = 1 - (loanRates[i] - bank.marketLoanRates[i]) * 0.2; // Reduced rate penalty
         let demand = baseDemand * (1 + change / 100) * rateEffect * demandMultiplier;
         if (scenario === hackScenario) demand *= 0.8;
         return Math.max(0, demand);
       });
       bank.currentDemand = loanDemands;
 
-      const totalCapacity = bank.staffing.sales * 5000000 * techMultipliers[bank.technology];
+      const totalCapacity = bank.staffing.sales * 10000000 * multiplier; // Increased capacity per staff
       const capacityPerType = totalCapacity / loanTypes.length;
       const currentLoans = totalLoans();
-      const lendingLimit = bank.deposits * 0.9 + bank.capital;
+      const lendingLimit = bank.deposits * 1.2 + bank.capital; // Increased lending limit to 120%
       const availableLending = lendingLimit - currentLoans;
 
       let totalPotential = 0;
       const potentialOriginations = loanDemands.map(demand => Math.min(demand, capacityPerType));
       totalPotential = potentialOriginations.reduce((sum, po) => sum + po, 0);
 
-      const scaleFactor = totalPotential > 0 ? Math.min(1, availableLending / totalPotential) : 0;
+      const scaleFactor = totalPotential > 0 ? Math.min(1.5, availableLending / totalPotential) : 0; // Allow up to 150% of potential
       bank.newLoans = 0;
       const monthlyVolumes = { 'Residential Mortgages': 0, 'Commercial Real Estate': 0, 'Small Business Loans': 0 };
 
       loanTypes.forEach((lt, i) => {
         let origination = potentialOriginations[i] * scaleFactor;
-        if (origination > 0) {  // Removed Math.max(1000000, origination)
+        if (origination > 0 && availableLending > bank.newLoans) {
+          const actualOrigination = Math.min(origination, availableLending - bank.newLoans);
           bank.loanPortfolio.push({
             type: lt.name,
             originationMonth: bank.month,
-            initialBalance: origination,
-            currentBalance: origination,
+            initialBalance: actualOrigination,
+            currentBalance: actualOrigination,
             rate: loanRates[i],
             term: lt.term,
             remainingTerm: lt.term,
-            payment: calculatePayment(origination, loanRates[i], lt.term),
+            payment: calculatePayment(actualOrigination, loanRates[i], lt.term),
           });
-          bank.newLoans += origination;
-          monthlyVolumes[lt.name] += origination;
+          bank.newLoans += actualOrigination;
+          monthlyVolumes[lt.name] = actualOrigination; // Assign directly
         }
       });
+
       bank.monthlyLoanVolumeHistory['Residential Mortgages'].push(monthlyVolumes['Residential Mortgages']);
       bank.monthlyLoanVolumeHistory['Commercial Real Estate'].push(monthlyVolumes['Commercial Real Estate']);
       bank.monthlyLoanVolumeHistory['Small Business Loans'].push(monthlyVolumes['Small Business Loans']);
@@ -706,6 +704,14 @@
       bank.efficiencyRatioHistory.push(efficiencyRatio);
       bank.totalLoansHistory.push(totalLoans());
       bank.totalDepositsHistory.push(bank.deposits);
+
+      // Update total loan type history
+      const residentialTotal = bank.loanPortfolio.filter(c => c.type === 'Residential Mortgages').reduce((s, c) => s + c.currentBalance, 0);
+      const commercialTotal = bank.loanPortfolio.filter(c => c.type === 'Commercial Real Estate').reduce((s, c) => s + c.currentBalance, 0);
+      const smallBusinessTotal = bank.loanPortfolio.filter(c => c.type === 'Small Business Loans').reduce((s, c) => s + c.currentBalance, 0);
+      bank.totalLoanTypeHistory['Residential Mortgages'].push(residentialTotal);
+      bank.totalLoanTypeHistory['Commercial Real Estate'].push(commercialTotal);
+      bank.totalLoanTypeHistory['Small Business Loans'].push(smallBusinessTotal);
 
       const rwa = loanTypes.reduce((sum, lt) => {
         const typeBalance = bank.loanPortfolio.filter(c => c.type === lt.name).reduce((s, c) => s + c.currentBalance, 0);
